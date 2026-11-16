@@ -1,20 +1,21 @@
 # TROLLfx RTA — Roadmap
 
-## V0.1.2 working baseline
-- UMIK-1 capture on Akai Force at 48 kHz, packed 24-bit stereo
-- 8192-point FFT / 31 third-octave bands
-- Red segmented LED browser display, display gain, peak hold and reset
-- Independent of MPC internal output routing
+## V0.1.2 baseline
+- Working independent UMIK-1 capture on Akai Force at 48 kHz, stereo packed 24-bit
+- Red 31-stack browser interface at 127.0.0.1:8096
+- Preserved on `main` and available for rollback
 
-## V0.1.3 next
-- Selectable 16-band performance layout, preserving the 31-band mode
-- Faster, less-smoothed visual update and floor-trim control
-- Vintage meter ballistics: instant attack, brief peak hold, decaying LED marker
-- Profile CPU overhead during full Force music playback
+## V0.2 measurement engine
+- Added on `feature/v02-measurement-engine`
+- PFFFT float transform, 32,768 sample window, power-integrated third-octave bands
+- Selectable 16-band view and configurable spectrum power averaging
+- Both serial 7033298 calibration curves and orientation selection
+- A/Z-weighted level calculations and provisional SPL reporting until Force input sensitivity is hardware-verified
+- Cross-build, deterministic synthetic DSP tests, host benchmark, manual install and rollback scripts
 
-## Later
-- UMIK-1 individual calibration file, frequency correction and calibrated SPL
-- Force touchscreen launcher, if supported by installed firmware
-- Better FFT low-frequency accuracy and noise-floor handling
+## Hardware verification still required
+- Validate UMIK Sens Factor and ALSA PCM level relationship with a traceable 94 dB SPL calibrator on the Force
+- Confirm real Force runtime cost and ALSA continuity while Force playback is active
+- Confirm browser UI and both microphone orientations on the Force
 
-Do not present relative dBFS as calibrated SPL.
+No Force audio settings are changed, and V0.2 does not install a boot service.
