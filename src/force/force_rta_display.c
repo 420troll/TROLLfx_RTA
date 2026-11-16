@@ -15,7 +15,8 @@ static int led_steps(double db, double gain, double floor_db) {
     if (scaled>=FORCE_RTA_LED_STEPS) return FORCE_RTA_LED_STEPS;
     return (int)floor(scaled+0.5);
 }
-int force_rta_render(const double *levels,const double *peaks,int mode,
+int force_rta_render(const double levels[FORCE_RTA_INPUT_BANDS],
+                     const double peaks[FORCE_RTA_INPUT_BANDS],int mode,
                      double gain,double floor_db,force_rta_display *out) {
     if (!levels||!peaks||!out || (mode!=16&&mode!=31) ||
         !isfinite(gain)||!isfinite(floor_db)||floor_db>=0) return 0;
