@@ -1,0 +1,7 @@
+*.o
+*.so
+*.wav
+*.log
+*.pid
+/build/
+__pycache__/
