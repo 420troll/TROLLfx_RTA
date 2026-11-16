@@ -1,0 +1,19 @@
+name: V0.2 DSP and ARM build
+on:
+  push:
+    branches: [feature/v02-measurement-engine]
+  pull_request:
+    branches: [main]
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ARMv7 cross-compiler
+        run: sudo apt-get update && sudo apt-get install -y gcc-arm-linux-gnueabihf
+      - name: DSP tests
+        run: bash scripts/run-tests.sh
+      - name: ARMv7 build
+        run: bash scripts/build-armv7.sh
+      - name: Inspect binary architecture
+        run: file build/trollfx-rta-v02-armv7
