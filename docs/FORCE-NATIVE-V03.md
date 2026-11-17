@@ -1,47 +1,65 @@
-# TROLLfx RTA — native Akai Force touchscreen V0.3 (experimental)
+# TROLLfx RTA V0.3 — native Force plugin
 
-## Target
+## State and architecture
 
-Create a VST2 **effect** using the Akai MPC Plugin SDK / Open MPC skin conventions. The Force should display the analyzer **inside MPC's plugin view**, not in an external browser. Preserve the separate V0.2 capture service and measurement corrections as the trusted measurement source.
+V0.3 is a stereo VST2 effect for the MPC/Force external-plugin host. It leaves the V0.2 daemon and ALSA capture path independent. The effect's process callback only copies separate input/output buffers when necessary; the host's normal in-place buffers pass through untouched. It does not capture audio, change Force routing, or delay the program audio.
 
-## Current implementation
-
-This branch contains a standalone, testable C adapter in `src/force/force_rta_display.[ch]`:
-- Converts 31 response-corrected measurement bands and peak levels into 24-step red LED values.
-- Produces **31** or **16** visible bands. The 16-band mode sums *power*, not decibels, for adjacent measurements.
-- Uses the established +11 dB display gain and -90 dBFS floor as configurable inputs.
-- Does not touch Force ALSA, internal-audio routing, or the MPC host; safe to test on desktop.
-- Test: `bash scripts/test-force-display.sh`.
-
-**Not yet a loadable VST binary.** The Force-native plugin wrapper, artwork, live parameter transport and ARM host integration remain to be implemented and validated. Do not install this branch as an MPC plugin.
-
-## Architecture
-
-```
-UMIK-1 USB -> standalone V0.2 ARM measurement daemon (port 8096)
-             -> 31-band and peak measurements, LZ / LA, validity
-             -> localhost reader (separate worker, no audio-thread I/O)
-             -> native VST2 UI parameters -> Force skin (LED strips, labels)
+```text
+UMIK-1 -> unchanged V0.2 daemon / ALSA hw:U18dB,0 -> 127.0.0.1:8096 /api/spectrum
+                                                    |
+                                 one shared worker per host process
+                                                    |
+                         atomic VST parameters -> native MPC skin
 ```
 
-Keep USB capture out of the VST audio callback. A failed/missing daemon must display **MIC OFFLINE** rather than hang MPC. Never poll HTTP, parse JSON, allocate, lock, or call ALSA in `processReplacing`. Use a bounded-rate worker and atomic snapshots. Avoid mutating `MPC.settings` without backups. Keep plugin UID distinct from existing TROLLfx effects.
+One client worker is shared by all loaded RTA instances in a process. It requests JSON at 5 Hz with bounded localhost connect/read/write timeouts and a 32 KiB response cap. A malformed, missing, or offline response marks the microphone offline; polling continues so a daemon restart is recovered automatically. JSON decoding, sockets, display ballistics, and host display invalidation are all outside `processReplacing`. Audio callbacks do not acquire the worker mutex. `TROLLFX_RTA_PORT` is an optional test override; the production default remains 8096.
 
-The native Force skin supports bitmaps, knobs, parameter-bound graphics and static labels, but **not arbitrary live-drawn FFT plots**. Visualize LEDs with discrete, pre-rendered image states or parameter graphics; measure UI thread cost on actual Force hardware before using 31 animated strips. Try 16-band as lightweight fallback.
+Refresh rate can be set to an integer from 1 to 10 Hz with `TROLLFX_RTA_REFRESH_HZ` before the host starts; the default is 5 Hz. The analysis-average control is service-global (there is one V0.2 analyzer) and the most recently changed instance setting is applied to that service.
 
-## Planned native UI
+The V0.2 service remains responsible for mic frequency-response correction, 0°/90° orientation, Z/A weighting, and SPL reference status. This plugin displays the reported orientation, the parsed `Sens Factor = 2.7673 dB` metadata, and `PROVISIONAL`, `USER REF`, or service-verified reference status. It does not treat the sensitivity field as an absolute SPL offset. Force ALSA input gain still needs an acoustic 94 dB reference measurement before absolute SPL can be labeled verified.
 
-- **ANALYZER** page: 31/16 red segmented stacks; optional peak LEDs; mic/connection status.
-- **DISPLAY** page: gain, floor, LED attack 50 ms, LED fall 33 dB/s, peak hold 200 ms, peak fall 60 dB/s.
-- **LEVEL** page: broadband raw dBFS; LZ and LA levels. Display **SPL PROVISIONAL** until actual acoustic reference is supplied. Distinguish **USER REF**.
-- Optional native buttons for reset peaks, calibration orientation 0°/90°, hold and mode.
+## Native display
 
-## Hardware acceptance gates
+The skin uses the supported MPC parameter-bound `Image` film-strip component rather than unsupported custom drawing. The generated red ladder art has 25 frames (0–24 lit segments); a second film strip displays the peak marker. The **31 BAND** page renders all 31 bands; **16 BAND** renders paired adjacent values using power summation. These are selectable function-key pages. Frequency labels, static panel art, and the LED states are local to the plugin skin.
 
-1. Force's **Internal Audio** remains selected; reconnect UMIK without disrupting playback.
-2. Native effect appears in plugin browser and loads without changes to other TROLLfx effects.
-3. 31/16 stack and peak levels track the localhost analyzer, without a browser/tunnel.
-4. Plug/unplug UMIK and stop/restart daemon: effect shows offline and recovers gracefully.
-5. Run three Doppler instances plus Chakra while watching CPU, display refresh and audio glitches.
-6. Calibration remains provisional until a known 94 dB SPL reference or measured REW comparison is applied.
+The **DISPLAY** page provides gain +11 dB, floor -90 dBFS, smoothing 0 ms, average 1 frame, 50 ms attack, 33 dB/s fall, peak hold 200 ms, 60 dB/s peak fall, hold enable, and peak reset. A single worker applies these controls to LED parameters; raw dBFS and service LZ/LA values are not changed by display gain or floor. Peak reset posts to the V0.2 API. Analysis-average changes post the selected 1/2/4/8/16 frame value to the V0.2 service.
 
-This avoids claiming that a browser web page can simply be embedded as a native VST on Akai Force.
+Q-Links 1–11 on DISPLAY map to its controls. Meter parameters are marked non-automatable and drawn by parameter-bound images. The **LEVEL** page displays raw dBFS, LZ/LA values, mic status, orientation, and reference status. The SDK's static scripted skin cannot provide arbitrary live text/graphics without host parameter reads; skin behavior and redraw cost still require Force-host acceptance.
+
+### Orientation selection
+
+The plug-in exposes the active service orientation as a readout. The V0.2 daemon selects its calibration file at startup (`--orientation 0` or `--orientation 90`); changing it requires restarting that daemon with the chosen value. The plugin intentionally does not show a fake orientation toggle that cannot change the existing service's calibration pointer. Both calibration curves and their shared `2.7673 dB` factor are preserved and tested in the V0.2 engine.
+
+The V0.2 service also accepts an independently known Z-weighted level through `POST /api/spl/reference?db=<known-dB-SPL>` and labels this **USER REF**; the web control or service API can set it. For example, with a known 94 dB calibrator currently on the microphone, call `curl -X POST 'http://127.0.0.1:8096/api/spl/reference?db=94'` on the Force. It remains unverified by the software. Clear it with `curl -X POST 'http://127.0.0.1:8096/api/spl/clear'` after input-gain changes. The VST keeps this workflow service-side rather than presenting an unverified acoustic reference as a plugin knob.
+
+## Source and SDK evaluation
+
+The existing engine is retained as the single measurement source. Its design and comparative review of prodmesh-rta, PFFFT, and python-soundlevelmeter are documented in [V0.2-DSP.md](V0.2-DSP.md). PFFFT remains the only bundled FFT dependency; the plugin does not add a second analyzer or Python/Qt/NumPy/SciPy dependencies.
+
+The plugin uses InMusic's MPC Plugin Builder SDK framework and declarative skin contract: [upstream SDK](https://github.com/inmusic-software/mpc-plugin-builder-sdk). V0.3 build was made against SDK revision `febd2ca5bd9eb16c4a412837196e145566bc981b` (MIT). This SDK supports ARM32/ARM64 VST2 entry points and parameter-bound `FilmStrip` images; it does not offer unrestricted live canvas rendering. See `plugins/TrollfxRta/THIRD_PARTY_NOTICES.txt`.
+
+## Build and test
+
+Obtain the pinned SDK revision and Zig 0.17.1. Set `MPC_SDK_DIR` to the SDK checkout. If Zig is provided as the `ziglang` Python package, set `PYTHONPATH` to its install directory and `SDK_ZIG_PYTHON` to that Python interpreter. Then run:
+
+```sh
+bash scripts/test-force-v03.sh
+MPC_SDK_DIR=/path/to/mpc-plugin-builder-sdk \
+  SDK_ZIG_PYTHON=/path/to/python PYTHONPATH=/path/to/ziglang \
+  bash scripts/build-force-v03.sh
+```
+
+The build produces 32-bit ARM hard-float and 64-bit ARM VST2 binaries, runs the SDK validator, the SDK host simulator, and a local VST host fixture that checks two instances, transparent pass-through, shutdown, and offline-to-online recovery. V0.2 DSP tests include both calibration parsers, the 2.7673 dB metadata, orientation selection/interpolation, and SPL mapping. Host timings are not Force performance measurements.
+
+The output package is under `dist/force-native-v03-package/`. For a hardware drive mounted on the development host, use the package's `install-force-v03.sh` with the explicit drive root and built plugin folder. It requires an existing `VST2 Plugins` folder and backs up only a pre-existing TROLLfx RTA plugin to the drive root before replacement. `rollback-force-v03.sh` removes/restores only that plugin. Neither script is run by the build.
+
+## Hardware acceptance still required
+
+- Confirm supported MPC/Force firmware and external-plugin enablement.
+- Install to the confirmed media destination; confirm plugin browser name, UID, touch pages, Q-Link controls, film-strip mapping and redraw speed.
+- With Force playback on **Internal Audio**, run program audio and verify bit-transparent effect pass-through, no glitches, and no changes to `MPC.settings` or global audio routing.
+- Verify worker reconnect after daemon stop/restart and UMIK unplug/replug; verify no duplicate ALSA capture and only one API poller with multiple plugin instances.
+- Test 31 and 16-band rendering, meter ballistics and resets while running three Doppler instances plus Chakra. Measure Force CPU and UI cost directly.
+- Compare 0° and 90° curves and validate the USB capture sensitivity using a traceable acoustic calibrator or independently verified reference. Until then label levels provisional or user-reference as appropriate.
+
+No Force-host behavior, hardware CPU use, USB capture behavior, or calibrated absolute SPL is claimed from cross-compilation or desktop simulation.

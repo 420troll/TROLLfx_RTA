@@ -45,3 +45,17 @@ For calibrated SPL, first use a traceable 94 dB SPL 1 kHz calibrator on the UMIK
 - `scripts/` — ARM build, tests, manual test install and rollback
 
 PFFFT is bundled under its license in `src/third_party/pffft/`; no ProdMesh or Python soundlevelmeter source is copied. The project-wide license remains to be chosen by maintainers.
+
+## V0.3 native plugin branch
+
+`feature/force-native-rta-v03` builds the browser-independent MPC/Force VST2 display effect while keeping V0.2 as the separate UMIK capture daemon. It has an ARMv7 hard-float binary, an ARM64 binary, parameter-bound 31/16-band LED skins, a bounded shared localhost client, test and installation scripts. See [the V0.3 design/build guide](docs/FORCE-NATIVE-V03.md) and [automated build/test results](docs/FORCE-NATIVE-V03-TEST-RESULTS.md). This is experimental until the Force host, touch UI, audio playback, and acoustic SPL reference checks pass on hardware.
+
+The build uses the pinned external InMusic MPC plugin SDK and Zig 0.17.1:
+
+```bash
+MPC_SDK_DIR=/path/to/mpc-plugin-builder-sdk \
+SDK_ZIG_PYTHON=/path/to/python PYTHONPATH=/path/to/ziglang \
+bash scripts/build-force-v03.sh
+```
+
+Build output and installer scripts are placed in `dist/force-native-v03-package/`. The build does not install to a Force.
