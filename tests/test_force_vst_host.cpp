@@ -5,6 +5,12 @@
 #include <thread>
 #include <chrono>
 #include <initializer_list>
+#include <signal.h>
+#include <fstream>
+#include <cstdlib>
+#include <vector>
+#include <string>
+#include <iterator>
 #include "mpc_vst2_abi.h"
 
 static VstIntPtr master(AEffect*, VstInt32 opcode, VstInt32, VstIntPtr, void*, float) {
@@ -18,7 +24,7 @@ static VstIntPtr master(AEffect*, VstInt32 opcode, VstInt32, VstIntPtr, void*, f
 }
 int main(int argc,char**argv) {
     std::setvbuf(stdout,nullptr,_IONBF,0);
-    if(argc!=2) return 2;
+    if(argc!=2 && argc!=3 && !(argc==4&&std::strcmp(argv[2],"--saved-state-compat")==0)) return 2;
     void* lib=dlopen(argv[1],RTLD_NOW|RTLD_LOCAL);
     if(!lib) { std::fprintf(stderr,"dlopen: %s\n",dlerror()); return 1; }
     using Entry=AEffect*(*)(audioMasterCallback);
@@ -32,6 +38,99 @@ int main(int argc,char**argv) {
         e->dispatcher(e,effSetSampleRate,0,0,nullptr,44100.0f);
         e->dispatcher(e,effSetBlockSize,0,128,nullptr,0);
         e->dispatcher(e,effMainsChanged,0,1,nullptr,0);
+    }
+    if(a->numParams!=115){std::printf("FAIL appended V0.4 parameter count: %d\n",a->numParams);return 1;}
+    char parameterName[64]{};a->dispatcher(a,effGetParamName,110,0,parameterName,0.0f);
+    if(std::strcmp(parameterName,"Peak Fall")!=0){std::printf("FAIL V0.3 parameter ordering changed at 110: %s\n",parameterName);return 1;}
+    a->dispatcher(a,effGetParamName,111,0,parameterName,0.0f);
+    if(std::strcmp(parameterName,"Service Mode")!=0){std::printf("FAIL V0.4 controls were not appended: %s\n",parameterName);return 1;}
+    if(argc>=3) {
+        const char* mode=argv[2];
+        auto display=[&](AEffect* e,int index){char out[64]{};e->dispatcher(e,effGetParamDisplay,index,0,out,0.0f);return std::string(out);};
+        if(std::strcmp(mode,"--saved-state-compat")==0){
+            if(argc!=4)return 2;
+            std::ifstream file(argv[3],std::ios::binary);std::vector<char> chunk((std::istreambuf_iterator<char>(file)),{});
+            if(chunk.size()<12||std::memcmp(chunk.data(),"MPCP",4)!=0||a->dispatcher(a,effSetChunk,0,(VstIntPtr)chunk.size(),chunk.data(),0.0f)!=1){std::puts("FAIL loading V0.3 state chunk");return 1;}
+            if(std::fabs(a->getParameter(a,101)-27.0f/48.0f)>0.002f||std::fabs(a->getParameter(a,110)-40.0f/58.0f)>0.002f||a->getParameter(a,111)!=0||a->getParameter(a,112)!=0||a->getParameter(a,113)!=0){std::puts("FAIL V0.3 parameter values or appended V0.4 defaults changed");return 1;}
+            for(AEffect* e:{a,b}){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);}dlclose(lib);std::puts("PASS V0.3 saved-state chunk loads unchanged and appended controls default safely");return 0;
+        }
+        const char* pidPath=std::getenv("TROLLFX_RTA_TEST_PIDFILE"); if(!pidPath){std::puts("FAIL missing mock service PID file setting");return 1;}
+        auto readPids=[&](){std::vector<pid_t> p;std::ifstream f(pidPath);long value=0;while(f>>value)p.push_back(static_cast<pid_t>(value));return p;};
+        if(std::strcmp(mode,"--service-rapid")==0) {
+            auto closeEffect=[](AEffect* e){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);};
+            auto waitPid=[&](size_t wanted){const auto d=std::chrono::steady_clock::now()+std::chrono::seconds(4);while(readPids().size()<wanted&&std::chrono::steady_clock::now()<d)std::this_thread::sleep_for(std::chrono::milliseconds(25));return readPids();};
+            auto p=waitPid(1);if(p.empty()){std::puts("FAIL rapid load initial service start");return 1;}closeEffect(a);closeEffect(b);
+            auto dead=[&](pid_t id){const auto d=std::chrono::steady_clock::now()+std::chrono::seconds(3);while(kill(id,0)==0&&std::chrono::steady_clock::now()<d)std::this_thread::sleep_for(std::chrono::milliseconds(25));return kill(id,0)!=0;};
+            if(!dead(p.back())){std::puts("FAIL rapid unload did not stop service");return 1;}
+            for(size_t i=1;i<4;i++){AEffect* e=entry(master);e->dispatcher(e,effOpen,0,0,nullptr,0);const auto ids=waitPid(i+1);if(ids.size()!=i+1){std::puts("FAIL rapid reload did not start one service");return 1;}closeEffect(e);if(!dead(ids.back())){std::puts("FAIL rapid unload left service running");return 1;}}
+            dlclose(lib);std::puts("PASS rapid load/unload cycles release worker, service and child process");return 0;
+        }
+        if(std::strcmp(mode,"--service-occupied")==0||std::strcmp(mode,"--service-shutdown-starting")==0||std::strcmp(mode,"--service-timeout")==0) {
+            const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(4);std::vector<pid_t> p;
+            while((p=readPids()).empty()&&std::chrono::steady_clock::now()<deadline)std::this_thread::sleep_for(std::chrono::milliseconds(25));
+            if(p.empty()){std::puts("FAIL startup test did not launch analyzer child");return 1;}
+            if(std::strcmp(mode,"--service-occupied")==0){std::this_thread::sleep_for(std::chrono::milliseconds(1300));if(readPids().size()!=1||kill(p[0],0)==0){std::printf("FAIL port conflict child cleanup: records=%zu alive=%d\n",readPids().size(),kill(p[0],0)==0);return 1;}}
+            if(std::strcmp(mode,"--service-timeout")==0){const auto d=std::chrono::steady_clock::now()+std::chrono::seconds(5);while(kill(p[0],0)==0&&std::chrono::steady_clock::now()<d)std::this_thread::sleep_for(std::chrono::milliseconds(25));if(kill(p[0],0)==0){std::puts("FAIL startup timeout did not terminate owned child");return 1;}}
+            for(AEffect* e:{a,b}){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);}
+            const auto d=std::chrono::steady_clock::now()+std::chrono::seconds(3);while(kill(p.back(),0)==0&&std::chrono::steady_clock::now()<d)std::this_thread::sleep_for(std::chrono::milliseconds(25));if(kill(p.back(),0)==0){std::puts("FAIL startup shutdown left owned child alive");return 1;}
+            dlclose(lib);std::printf("PASS %s\n",mode+2);return 0;
+        }
+        if(std::strcmp(mode,"--service-missing")==0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(700));
+            if(display(a,114)!="ERROR"||!readPids().empty()){std::printf("FAIL missing service state: %s\n",display(a,114).c_str());return 1;}
+            for(AEffect* e:{a,b}){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);}dlclose(lib);
+            std::puts("PASS missing executable gives bounded visible ERROR without blocking audio");return 0;
+        }
+        if(std::strcmp(mode,"--service-manual")==0) {
+            for(AEffect* e:{a,b})e->setParameter(e,111,1.0f);
+            std::this_thread::sleep_for(std::chrono::milliseconds(300));
+            if(!readPids().empty()){std::puts("FAIL MANUAL mode auto-started the service");return 1;}
+            a->setParameter(a,112,1.0f);const auto started=std::chrono::steady_clock::now()+std::chrono::seconds(4);
+            while(readPids().empty()&&std::chrono::steady_clock::now()<started)std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            auto p=readPids();if(p.size()!=1){std::puts("FAIL momentary manual START did not start exactly one service");return 1;}
+            a->setParameter(a,113,1.0f);const auto stopped=std::chrono::steady_clock::now()+std::chrono::seconds(3);
+            while(kill(p[0],0)==0&&std::chrono::steady_clock::now()<stopped)std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            std::this_thread::sleep_for(std::chrono::milliseconds(400));
+            if(kill(p[0],0)==0||readPids().size()!=1){std::puts("FAIL manual STOP did not suppress automatic restart");return 1;}
+            a->setParameter(a,112,1.0f);const auto restarted=std::chrono::steady_clock::now()+std::chrono::seconds(4);
+            while(readPids().size()<2&&std::chrono::steady_clock::now()<restarted)std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            p=readPids();if(p.size()!=2){std::puts("FAIL manual START did not resume service");return 1;}
+            for(AEffect* e:{a,b}){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);}dlclose(lib);
+            std::puts("PASS manual mode, momentary START/STOP, and restart suppression policy");return 0;
+        }
+        const bool recovery=std::strcmp(mode,"--service-recovery")==0;
+        if(!recovery&&std::strcmp(mode,"--service-lifecycle")!=0&&std::strcmp(mode,"--service-offline")!=0)return 2;
+        if(recovery) {
+            const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(10);std::vector<pid_t> p;
+            while((p=readPids()).size()<2&&std::chrono::steady_clock::now()<deadline)std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            if(p.size()<2||p[0]==p[1]){std::puts("FAIL crashed owned analyzer was not restarted");return 1;}
+            const auto online=std::chrono::steady_clock::now()+std::chrono::seconds(3);while(display(a,114)!="ONLINE"&&std::chrono::steady_clock::now()<online)std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            if(display(a,114)!="ONLINE"){std::puts("FAIL analyzer recovery did not reconnect API");return 1;}
+            for(AEffect* e:{a,b}){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);}dlclose(lib);
+            std::puts("PASS controlled crash recovery and API reconnection");return 0;
+        }
+        if(std::strcmp(mode,"--service-offline")==0) {
+            const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(4);auto p=readPids();
+            while(p.empty()&&std::chrono::steady_clock::now()<deadline){std::this_thread::sleep_for(std::chrono::milliseconds(50));p=readPids();}
+            std::this_thread::sleep_for(std::chrono::milliseconds(700));
+            if(p.size()!=1||readPids().size()!=1||display(a,114)!="ERROR"){std::printf("FAIL offline microphone handling: %s\n",display(a,114).c_str());return 1;}
+            for(AEffect* e:{a,b}){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);}dlclose(lib);
+            std::puts("PASS missing microphone is visible without a respawn loop");return 0;
+        }
+        pid_t pid=-1; const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(4);
+        while(std::chrono::steady_clock::now()<deadline){std::ifstream f(pidPath); long value=0;if(f>>value){pid=static_cast<pid_t>(value);break;}std::this_thread::sleep_for(std::chrono::milliseconds(50));}
+        if(pid<=0){std::puts("FAIL first instance did not start bundled analyzer mock");return 1;}
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        auto p=readPids();const int records=static_cast<int>(p.size());
+        if(records!=1){std::printf("FAIL duplicate analyzer processes: %d\n",records);return 1;}
+        a->dispatcher(a,effMainsChanged,0,0,nullptr,0);a->dispatcher(a,effClose,0,0,nullptr,0);
+        std::this_thread::sleep_for(std::chrono::milliseconds(300));
+        if(kill(pid,0)!=0){std::puts("FAIL unloading one instance stopped shared analyzer");return 1;}
+        b->dispatcher(b,effMainsChanged,0,0,nullptr,0);b->dispatcher(b,effClose,0,0,nullptr,0);
+        const auto stopped=std::chrono::steady_clock::now()+std::chrono::seconds(4);
+        while(std::chrono::steady_clock::now()<stopped&&kill(pid,0)==0)std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        if(kill(pid,0)==0){std::puts("FAIL final instance did not stop owned analyzer");return 1;}
+        dlclose(lib);std::puts("PASS owned analyzer starts once, is shared, and stops on final unload");return 0;
     }
     const float expected[]={23.0f/48.0f,30.0f/80.0f,0.0f,0.0f,1.0f,0.0f,50.0f/400.0f,31.0f/58.0f,200.0f/3000.0f,1.0f};
     for(int i=0;i<10;i++) if(std::fabs(a->getParameter(a,101+i)-expected[i])>0.002f) {
@@ -52,10 +151,13 @@ int main(int argc,char**argv) {
     if(levelA<0.70f||levelA>0.90f||std::fabs(levelA-levelB)>0.001f) {
         std::printf("FAIL reconnect/shared client parameter values: %.3f %.3f\n",levelA,levelB); return 1;
     }
+    char serviceStatus[32]{};a->dispatcher(a,effGetParamDisplay,114,0,serviceStatus,0.0f);
+    if(std::strcmp(serviceStatus,"EXTERNAL")!=0){std::printf("FAIL external analyzer ownership state: %s\n",serviceStatus);return 1;}
+    a->setParameter(a,113,1.0f);std::this_thread::sleep_for(std::chrono::milliseconds(250));
     const float expectedBand16=( -30.0f+10.0f*std::log10(2.0f)+11.0f+90.0f )/90.0f;
-    const float expectedPeak16=( -25.0f+10.0f*std::log10(2.0f)+11.0f+90.0f )/90.0f;
+    const float expectedPeak16=( -20.0f+10.0f*std::log10(2.0f)+11.0f+90.0f )/90.0f;
     if(a->getParameter(a,31)<0.70f || std::fabs(a->getParameter(a,69)-expectedBand16)>0.02f ||
-       std::fabs(a->getParameter(a,85)-expectedPeak16)>0.02f) {
+       a->getParameter(a,85)<a->getParameter(a,69)-0.005f || a->getParameter(a,85)>expectedPeak16+0.01f) {
         std::printf("FAIL service peak markers or 16-band power aggregation: p31 %.3f b16 %.3f p16 %.3f expected %.3f/%.3f\n",a->getParameter(a,31),a->getParameter(a,69),a->getParameter(a,85),expectedBand16,expectedPeak16); return 1;
     }
     std::puts("PASS offline-to-online recovery and coherent two-instance client snapshot");

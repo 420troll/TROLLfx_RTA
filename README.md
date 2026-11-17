@@ -59,3 +59,17 @@ bash scripts/build-force-v03.sh
 ```
 
 Build output and installer scripts are placed in `dist/force-native-v03-package/`. The build does not install to a Force.
+
+## V0.4 automatic service branch
+
+`feature/force-native-rta-v04-auto-service` extends the native plugin with AUTO/MANUAL service controls, one shared analyzer supervisor, a bundled persistent ARMv7 V0.2 analyzer and both UMIK calibration curves. It preserves V0.3 parameter IDs and uses only supported parameter-bound controls. See [V0.4 lifecycle and installation notes](docs/FORCE-NATIVE-V04.md).
+
+Build and run the DSP, plugin, and lifecycle fixtures with the pinned MPC SDK, Zig 0.17.1, and Pillow:
+
+```bash
+MPC_SDK_DIR=/path/to/mpc-plugin-builder-sdk \
+SDK_ZIG_PYTHON=/path/to/python PYTHONPATH=/path/to/ziglang \
+bash scripts/build-force-v04.sh
+```
+
+The complete hardware-test package is created under `dist/force-native-v04-package/`. Install only to a confirmed mounted Force drive with the supplied script; the V0.3 plugin is backed up first. Build and mock tests do not constitute Force hardware verification.

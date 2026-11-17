@@ -1,0 +1,31 @@
+name: V0.4 automatic analyzer service
+on:
+  push:
+    branches: [feature/force-native-rta-v04-auto-service]
+  pull_request:
+    branches: [feature/force-native-rta-v03]
+jobs:
+  build-test-package:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get pinned MPC Plugin Builder SDK
+        run: |
+          git clone https://github.com/inmusic-software/mpc-plugin-builder-sdk.git "$RUNNER_TEMP/mpc-plugin-builder-sdk"
+          git -C "$RUNNER_TEMP/mpc-plugin-builder-sdk" checkout febd2ca5bd9eb16c4a412837196e145566bc981b
+      - name: Install Zig and artwork generator
+        run: |
+          python3 -m pip install --target "$RUNNER_TEMP/v04-python" ziglang==0.17.1 Pillow==10.4.0
+          echo "PYTHONPATH=$RUNNER_TEMP/v04-python" >> "$GITHUB_ENV"
+      - name: Build, test and package V0.4
+        env:
+          MPC_SDK_DIR: ${{ runner.temp }}/mpc-plugin-builder-sdk
+          SDK_ZIG_PYTHON: /usr/bin/python3
+        run: bash scripts/build-force-v04.sh
+      - name: Verify ARMv7 VST and service package
+        run: bash scripts/verify-force-v04.sh "dist/force-native-v04-package/TROLLfx - VST - TROLLfx - VST - RTA"
+      - name: Upload controlled-install hardware package
+        uses: actions/upload-artifact@v4
+        with:
+          name: trollfx-rta-v04-akai-force
+          path: dist/force-native-v04-package/
