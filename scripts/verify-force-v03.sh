@@ -5,9 +5,9 @@ folder="$(cd "$1" && pwd)"
 arm="$folder/VST/trollfx-rta-arm32.so"
 [[ -f "$arm" && -f "$folder/plugin.json" && -f "$folder/Plugin Skins/TUI.json" ]] || { echo "Required plugin files are missing." >&2; exit 1; }
 file "$arm"
-readelf -h "$arm" | rg 'Class:|Machine:|Type:'
-readelf -A "$arm" | rg 'Tag_CPU_arch:|Tag_ABI_VFP_args:'
-nm -D --defined-only "$arm" | rg 'VSTPluginMain'
+readelf -h "$arm" | grep -E 'Class:|Machine:|Type:'
+readelf -A "$arm" | grep -E 'Tag_CPU_arch:|Tag_ABI_VFP_args:'
+nm -D --defined-only "$arm" | grep -E 'VSTPluginMain'
 python3 - "$folder/plugin.json" <<'PY'
 import json,sys
 p=json.load(open(sys.argv[1]))
