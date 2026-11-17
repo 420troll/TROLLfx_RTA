@@ -1,0 +1,43 @@
+name: V0.2 DSP and ARM build
+on:
+  push:
+    branches: [feature/v02-measurement-engine, feature/force-native-rta-v03]
+  pull_request:
+    branches: [main]
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ARMv7 cross-compiler
+        run: sudo apt-get update && sudo apt-get install -y gcc-arm-linux-gnueabihf
+      - name: DSP tests
+        run: bash scripts/run-tests.sh
+      - name: Force display adapter tests
+        run: bash scripts/test-force-display.sh
+      - name: ARMv7 build
+        run: bash scripts/build-armv7.sh
+      - name: Inspect binary architecture
+        run: file build/trollfx-rta-v02-armv7
+      - name: V0.3 JSON, display and measurement tests
+        run: bash scripts/test-force-v03.sh
+      - name: Get pinned MPC plugin SDK
+        run: |
+          git clone https://github.com/inmusic-software/mpc-plugin-builder-sdk.git "$RUNNER_TEMP/mpc-plugin-builder-sdk"
+          git -C "$RUNNER_TEMP/mpc-plugin-builder-sdk" checkout febd2ca5bd9eb16c4a412837196e145566bc981b
+      - name: Install pinned Zig toolchain package
+        run: |
+          python3 -m pip install --target "$RUNNER_TEMP/v03-python" ziglang==0.17.1 Pillow==10.4.0
+          echo "PYTHONPATH=$RUNNER_TEMP/v03-python" >> "$GITHUB_ENV"
+      - name: Build, host-test and package native Force plugin
+        env:
+          MPC_SDK_DIR: ${{ runner.temp }}/mpc-plugin-builder-sdk
+          SDK_ZIG_PYTHON: /usr/bin/python3
+        run: bash scripts/build-force-v03.sh
+      - name: Verify packaged ARMv7 VST
+        run: bash scripts/verify-force-v03.sh "plugins/TrollfxRta/build/TROLLfx - VST - TROLLfx - VST - RTA"
+      - name: Preserve hardware-test package
+        uses: actions/upload-artifact@v4
+        with:
+          name: trollfx-rta-v03-akai-force
+          path: dist/force-native-v03-package/
