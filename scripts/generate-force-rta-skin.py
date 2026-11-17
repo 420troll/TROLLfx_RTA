@@ -97,6 +97,11 @@ def main():
         row,col=divmod(slot,4); x=23+col*320; y=60+row*150
         control_entries.append(entry("panelLabel"+str(slot),"Label",{"version":1,"textStyle":text_style(20,"ffff7777"),"type":"Text","handleName":"Invalid","text":label},f"{x} {y} 278 34"))
         control_entries.append(entry("control"+str(slot),"Slider",{"version":1,"handleName":"Data"},f"{x} {y+36} 278 78",idx,"Yes"))
+    for slot,(idx,label) in enumerate([(111,"SERVICE MODE"),(112,"ANALYZER START"),(113,"ANALYZER STOP"),(114,"SERVICE STATUS")]):
+        x=23+slot*320; y=510
+        control_entries.append(entry("serviceLabel"+str(slot),"Label",{"version":1,"textStyle":text_style(18,"ffff7777"),"type":"Text","handleName":"Invalid","text":label},f"{x} {y} 278 28"))
+        if idx==114: control_entries.append(label_entry("serviceStatus",idx,x,y+30,278,58,size=22,color="ffff9b55"))
+        else: control_entries.append(entry("serviceControl"+str(slot),"Slider",{"version":1,"handleName":"Data"},f"{x} {y+30} 278 58",idx,"Yes"))
     tabs.append(tab("DISPLAY",2,control_entries))
     level_entries=[]
     bg=Image.new("RGBA",(1280,628),(8,4,5,255)); d=ImageDraw.Draw(bg)
@@ -113,6 +118,7 @@ def main():
         assignments={f"Q-Link {n}":-1 for n in range(1,17)}
         if t==2:
             for n in range(1,11): assignments[f"Q-Link {n}"]=100+n
+            assignments["Q-Link 11"]=111; assignments["Q-Link 12"]=112; assignments["Q-Link 13"]=113
         qlinks.append({"Tab":t+1,"SubTab":1,"Bank Direction":"Column","Q-Links":assignments})
     q={"version":4,"info":{"version":1,"type":"CompleteDescription"},"Screen Mode Q-Links":{"version":4,"map":qlinks},"Program Mode Q-Links":{f"Q-Link {n}":-1 for n in range(1,17)}}
     with open(os.path.join(ROOT,"Q-Links.json"),"w") as f: json.dump(q,f,indent=2)

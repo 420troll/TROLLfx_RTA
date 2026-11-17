@@ -15,6 +15,14 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <cstdlib>
+#include <dlfcn.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+#include <spawn.h>
+extern char **environ;
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -24,9 +32,12 @@ namespace {
 enum : int {
     kBand = 0, kPeak = 31, kRaw = 62, kLz, kLa, kOrientation, kMic, kCalibration,
     kSensitivity = 68, kBand16 = 69, kPeak16 = 85, kGain = 101, kFloor, kSmoothing, kAverage, kPeakEnable, kPeakReset,
-    kAttack, kFall, kPeakHold, kPeakFall, kParamCount
+    kAttack, kFall, kPeakHold, kPeakFall,
+    kServiceMode, kServiceStart, kServiceStop, kServiceState, kParamCount
 };
 constexpr int kUid = MPC_FOURCC('T', 'f', 'R', 'A');
+enum ServiceState : int { SERVICE_STOPPED, SERVICE_STARTING, SERVICE_ONLINE, SERVICE_STOPPING, SERVICE_ERROR, SERVICE_EXTERNAL };
+static void servicePathAnchor() {}
 
 bool writeAll(int fd, const char* p, size_t n) {
     while (n) {
@@ -96,6 +107,8 @@ public:
     void remove(TrollfxRta* p);
     void queueReset() { reset_.store(true, std::memory_order_release); }
     void queueAverage(int index) { averageIndex_.store(mpc::clamp(index,0,4), std::memory_order_release); }
+    void command(int command) { command_.store(command, std::memory_order_release); cv_.notify_all(); }
+    void queueServiceMode(int mode) { desiredMode_.store(mpc::clamp(mode,0,1),std::memory_order_release); modePending_.store(true,std::memory_order_release); cv_.notify_all(); }
 private:
     void run();
     std::mutex lifecycleMutex_;
@@ -103,9 +116,18 @@ private:
     std::condition_variable cv_;
     std::vector<TrollfxRta*> clients_;
     std::thread thread_;
-    bool stop_ = false;
+    std::atomic<bool> stop_{false};
     std::atomic<int> averageIndex_{0};
     std::atomic<bool> reset_{false};
+    std::atomic<int> command_{0};
+    std::atomic<int> desiredMode_{0};
+    std::atomic<bool> modePending_{false};
+    std::atomic<int> serviceState_{SERVICE_STOPPED};
+    pid_t childPid_ = -1;
+    int lockFd_ = -1;
+    std::chrono::steady_clock::time_point childStartedAt_{};
+    std::string executable_;
+    std::atomic<int> autoSuppressed_{0};
 };
 
 class TrollfxRta final : public mpc::Plugin {
@@ -133,6 +155,10 @@ public:
         addParam(mpc::floatParam("led_fall", "LED Fall", 2, 60, 33, "dB/s", 0));
         addParam(mpc::floatParam("peak_hold", "Peak Time", 0, 3000, 200, "ms", 0));
         addParam(mpc::floatParam("peak_fall", "Peak Fall", 2, 60, 60, "dB/s", 0));
+        addParam(mpc::choiceParam("service_mode", "Service Mode", {"AUTO", "MANUAL"}, 0));
+        auto start=mpc::boolParam("analyzer_start", "Analyzer START", false); start.automatable=false; addParam(start);
+        auto stop=mpc::boolParam("analyzer_stop", "Analyzer STOP", false); stop.automatable=false; addParam(stop);
+        auto state=mpc::choiceParam("service_status", "Service Status", {"STOPPED", "STARTING", "ONLINE", "STOPPING", "ERROR", "EXTERNAL"}, 0); state.automatable=false; addParam(state);
         addProgram("RTA", defaults());
         SharedClient::instance().add(this);
     }
@@ -148,6 +174,9 @@ public:
     void parameterChanged(int index, float value) override {
         if (index == kPeakReset && value >= 0.5f) SharedClient::instance().queueReset();
         if (index == kAverage) SharedClient::instance().queueAverage(static_cast<int>(std::lround(value)));
+        if (index == kServiceMode) SharedClient::instance().queueServiceMode(static_cast<int>(std::lround(value)));
+        if (index == kServiceStart && value >= 0.5f) { SharedClient::instance().command(1); set(kServiceStart,0.0f); }
+        if (index == kServiceStop && value >= 0.5f) { SharedClient::instance().command(2); set(kServiceStop,0.0f); }
     }
     bool formatValue(int index, float v, std::string& out) override {
         if (index == kOrientation) { out = v < 0.5f ? "0 deg" : "90 deg"; return true; }
@@ -156,6 +185,7 @@ public:
             out = v < 0.5f ? "PROVISIONAL" : (v < 1.5f ? "VERIFIED" : "USER REF"); return true;
         }
         if (index == kMic) { out = v >= 0.5f ? "ONLINE" : "OFFLINE"; return true; }
+        if (index == kServiceState) { static const char* names[]={"STOPPED","STARTING","ONLINE","STOPPING","ERROR","EXTERNAL"}; int n=mpc::clamp(static_cast<int>(v),0,5); out=names[n]; return true; }
         return false;
     }
     void update(const trollfx::Snapshot& s) {
@@ -212,9 +242,11 @@ public:
         set(kCalibration, s.calibrated ? 1.0f : s.referenceType == 2 ? 2.0f : 0.0f);
         requestDisplayUpdate();
     }
+    int serviceMode() const { return get(kServiceMode) >= 0.5f ? 1 : 0; }
     void offline() {
         if (getBool(kMic)) { set(kMic,0.0f); requestDisplayUpdate(); }
     }
+    void setServiceState(int state) { set(kServiceState,static_cast<float>(state)); if(state!=SERVICE_ONLINE) offline(); }
     void resetPeaks() {
         const auto now=std::chrono::steady_clock::now();
         for(int i=0;i<31;i++){peakState_[i]=meterState_[i];sourcePeakState_[i]=0;peakTime_[i]=now;}
@@ -226,6 +258,7 @@ public:
         v[kRaw]=-120; v[kLz]=-120; v[kLa]=-120; v[kOrientation]=0; v[kMic]=0; v[kCalibration]=0;
         v[kSensitivity]=2.7673f; v[kGain]=11; v[kFloor]=-90; v[kSmoothing]=0; v[kAverage]=0; v[kPeakEnable]=1; v[kPeakReset]=0;
         v[kAttack]=50; v[kFall]=33; v[kPeakHold]=200; v[kPeakFall]=60;
+        v[kServiceMode]=0; v[kServiceStart]=0; v[kServiceStop]=0; v[kServiceState]=SERVICE_STOPPED;
         return v;
     }
 private:
@@ -235,7 +268,7 @@ private:
     }
     static mpc::PluginInfo makeInfo() {
         mpc::PluginInfo i; i.name="TROLLfx - VST - RTA"; i.vendor="TROLLfx"; i.uniqueId=kUid;
-        i.version=300; i.isInstrument=false; i.numInputs=2; i.numOutputs=2; i.tailSamples=1; return i;
+        i.version=400; i.isInstrument=false; i.numInputs=2; i.numOutputs=2; i.tailSamples=1; return i;
     }
     std::array<float,31> smoothState_{};
     std::array<float,31> meterState_{};
@@ -259,7 +292,7 @@ void SharedClient::remove(TrollfxRta* p) {
     std::lock_guard<std::mutex> lifecycle(lifecycleMutex_);
     std::thread join;
     { std::lock_guard<std::mutex> lock(mutex_); clients_.erase(std::remove(clients_.begin(),clients_.end(),p),clients_.end());
-      if (clients_.empty() && thread_.joinable()) { stop_=true; cv_.notify_all(); join=std::move(thread_); } }
+      if (clients_.empty() && thread_.joinable()) { stop_=true; cv_.notify_all(); join=std::move(thread_); autoSuppressed_.store(0,std::memory_order_release); } }
     if (join.joinable()) join.join();
 }
 void SharedClient::run() {
@@ -267,27 +300,105 @@ void SharedClient::run() {
     int lastAverageSent=-1;
     int refreshHz=5;
     if (const char* setting=std::getenv("TROLLFX_RTA_REFRESH_HZ")) { char* end=nullptr; long n=std::strtol(setting,&end,10); if(end!=setting&&n>=1&&n<=10)refreshHz=static_cast<int>(n); }
-    while (!stop_) {
+    unsigned failedStarts=0; auto retryAt=std::chrono::steady_clock::time_point{};
+    bool external=false, manualStart=false; int mode=-1;
+    auto bundledExecutable=[]() -> std::string {
+        if (const char* overridePath=std::getenv("TROLLFX_RTA_SERVICE_EXECUTABLE")) return overridePath;
+        Dl_info info{}; if (!dladdr(reinterpret_cast<void*>(&servicePathAnchor),&info) || !info.dli_fname) return {};
+        char resolved[4096]; if (!realpath(info.dli_fname,resolved)) return {};
+        std::string path(resolved); const size_t slash=path.find_last_of('/');
+        if (slash==std::string::npos) return {};
+        path.resize(slash); // VST directory
+        return path+"/../Service/trollfx-rta-v02-armv7";
+    };
+    auto childMatches=[this]() -> bool {
+        if (childPid_<=0) return false;
+        char proc[64],exe[4096],expected[4096]; std::snprintf(proc,sizeof(proc),"/proc/%ld/exe",(long)childPid_);
+        const ssize_t n=readlink(proc,exe,sizeof(exe)-1); if(n<=0)return false; exe[n]=0;
+        char* deleted=std::strstr(exe," (deleted)"); if(deleted)*deleted=0;
+        if(!realpath(executable_.c_str(),expected))return false;
+        return std::strcmp(exe,expected)==0;
+    };
+    bool lockBusy=false;
+    auto releaseLock=[this]() { if(lockFd_>=0){flock(lockFd_,LOCK_UN);close(lockFd_);lockFd_=-1;} };
+    auto launch=[this,&bundledExecutable,&lockBusy,&releaseLock]() -> bool {
+        const char* lockPath=std::getenv("TROLLFX_RTA_LOCK_PATH"); if(!lockPath)lockPath="/tmp/trollfx-rta-v04.lock";
+        lockFd_=open(lockPath,O_RDWR|O_CREAT|O_CLOEXEC,0600);
+        if(lockFd_<0 || flock(lockFd_,LOCK_EX|LOCK_NB)!=0) { if(lockFd_>=0)close(lockFd_);lockFd_=-1;lockBusy=true;return false; }
+        executable_=bundledExecutable(); if(executable_.empty() || access(executable_.c_str(),X_OK)!=0){releaseLock();return false;}
+        const std::string dir=executable_.substr(0,executable_.find_last_of('/'));
+        const std::string c0=dir+"/calibration/7033298.txt",c90=dir+"/calibration/7033298_90deg.txt";
+        const char* port="8096"; if(const char* configured=std::getenv("TROLLFX_RTA_PORT"))port=configured;
+        posix_spawn_file_actions_t actions; if(posix_spawn_file_actions_init(&actions)!=0){releaseLock();return false;}
+        posix_spawn_file_actions_addopen(&actions,STDOUT_FILENO,"/tmp/trollfx-rta-v04.log",O_WRONLY|O_CREAT|O_APPEND,0600);
+        posix_spawn_file_actions_adddup2(&actions,STDOUT_FILENO,STDERR_FILENO);
+        char* const argv[]={const_cast<char*>(executable_.c_str()),const_cast<char*>("--device"),const_cast<char*>("hw:U18dB,0"),const_cast<char*>("--port"),const_cast<char*>(port),const_cast<char*>("--cal-0"),const_cast<char*>(c0.c_str()),const_cast<char*>("--cal-90"),const_cast<char*>(c90.c_str()),const_cast<char*>("--orientation"),const_cast<char*>("0"),nullptr};
+        pid_t pid=-1; const int spawnResult=posix_spawn(&pid,executable_.c_str(),&actions,nullptr,argv,environ);
+        posix_spawn_file_actions_destroy(&actions); if(spawnResult!=0){releaseLock();return false;}
+        childPid_=pid; childStartedAt_=std::chrono::steady_clock::now(); return true;
+    };
+    auto stopOwned=[&]() {
+        if(childPid_<=0){releaseLock();return;}
+        serviceState_.store(SERVICE_STOPPING,std::memory_order_release);
+        if(childMatches())kill(childPid_,SIGTERM);
+        const auto until=std::chrono::steady_clock::now()+std::chrono::seconds(2); int status=0;
+        while(std::chrono::steady_clock::now()<until) { pid_t r=waitpid(childPid_,&status,WNOHANG); if(r==childPid_){childPid_=-1;releaseLock();return;} std::this_thread::sleep_for(std::chrono::milliseconds(50)); }
+        if(childMatches())kill(childPid_,SIGKILL);
+        waitpid(childPid_,&status,0); childPid_=-1;releaseLock();
+    };
+    while (!stop_.load(std::memory_order_acquire)) {
         lock.unlock();
+        int currentMode=mode<0?0:mode;
+        if(mode<0) { std::lock_guard<std::mutex> stateLock(mutex_); if(!clients_.empty())currentMode=clients_.front()->serviceMode(); }
+        if(modePending_.exchange(false,std::memory_order_acq_rel)) currentMode=desiredMode_.load(std::memory_order_acquire);
+        if(currentMode!=mode) { mode=currentMode; autoSuppressed_.store(0,std::memory_order_release); failedStarts=0;retryAt=std::chrono::steady_clock::now();if(mode==0)manualStart=false; }
+        lockBusy=false;
+        const int cmd=command_.exchange(0,std::memory_order_acq_rel);
+        if(cmd==1){manualStart=true;autoSuppressed_.store(0,std::memory_order_release);failedStarts=0;retryAt=std::chrono::steady_clock::now();}
+        if(cmd==2){manualStart=false;autoSuppressed_.store(1,std::memory_order_release); if(childPid_>0)stopOwned();}
+        bool shouldRun=manualStart || (mode==0 && !autoSuppressed_.load(std::memory_order_acquire));
+        std::string probeBody; trollfx::Snapshot probe;
+        const bool apiAvailable=request("/api/spectrum","GET",probeBody) && trollfx::parseSpectrumJson(probeBody,probe);
+        if(childPid_>0) {
+            int childStatus=0; const pid_t ended=waitpid(childPid_,&childStatus,WNOHANG);
+            if(ended==childPid_){ childPid_=-1;releaseLock(); if(shouldRun){ ++failedStarts; const char* delay=std::getenv("TROLLFX_RTA_TEST_RETRY_DELAY_MS");retryAt=std::chrono::steady_clock::now()+std::chrono::milliseconds(delay?std::max(50,atoi(delay)):failedStarts==1?2000:failedStarts==2?5000:15000); } }
+        }
+        long startupTimeoutMs=10000;if(const char* configured=std::getenv("TROLLFX_RTA_TEST_STARTUP_TIMEOUT_MS")){char* end=nullptr;long n=strtol(configured,&end,10);if(end!=configured&&n>=100&&n<=60000)startupTimeoutMs=n;}
+        if(childPid_>0 && !apiAvailable && std::chrono::steady_clock::now()-childStartedAt_>std::chrono::milliseconds(startupTimeoutMs)) {
+            stopOwned(); ++failedStarts; const char* delay=std::getenv("TROLLFX_RTA_TEST_RETRY_DELAY_MS");retryAt=std::chrono::steady_clock::now()+std::chrono::milliseconds(delay?std::max(50,atoi(delay)):failedStarts==1?2000:failedStarts==2?5000:15000);
+        }
+        if(childPid_>0 && !childMatches()) { childPid_=-1;releaseLock(); }
+        if(external && !apiAvailable && childPid_<=0) { external=false; retryAt=std::chrono::steady_clock::now()+std::chrono::seconds(1); }
+        if(!shouldRun && childPid_>0) stopOwned();
+        if(apiAvailable && childPid_<=0) {
+            external=true; serviceState_.store(SERVICE_EXTERNAL,std::memory_order_release);
+        } else if(childPid_>0) {
+            external=false; serviceState_.store(probe.ok?SERVICE_ONLINE:SERVICE_ERROR,std::memory_order_release);
+        } else if(shouldRun && !external && failedStarts<3 && std::chrono::steady_clock::now()>=retryAt && !apiAvailable) {
+            if(launch()){ serviceState_.store(SERVICE_STARTING,std::memory_order_release); }
+            else if(lockBusy)serviceState_.store(SERVICE_STARTING,std::memory_order_release);
+            else { const char* delay=std::getenv("TROLLFX_RTA_TEST_RETRY_DELAY_MS");failedStarts++;retryAt=std::chrono::steady_clock::now()+std::chrono::milliseconds(delay?std::max(50,atoi(delay)):failedStarts<3?5000:30000);serviceState_.store(SERVICE_ERROR,std::memory_order_release); }
+        } else if(!apiAvailable && childPid_<=0) serviceState_.store(shouldRun?(failedStarts>0?SERVICE_ERROR:SERVICE_STARTING):SERVICE_STOPPED,std::memory_order_release);
         if (reset_.exchange(false, std::memory_order_acq_rel)) {
             std::string ignored; request("/api/reset", "POST", ignored);
             std::lock_guard<std::mutex> resetLock(mutex_);
             for (TrollfxRta* p:clients_) p->resetPeaks();
         }
-        std::string body; trollfx::Snapshot s;
-        const bool good=request("/api/spectrum","GET",body) && trollfx::parseSpectrumJson(body,s);
+        trollfx::Snapshot s=probe;
+        const bool good=apiAvailable;
         if (good) {
             const int avg=averageIndex_.load(std::memory_order_acquire);
             if (lastAverageSent!=avg) { static const int frames[]={1,2,4,8,16}; std::string response; char path[64]; std::snprintf(path,sizeof(path),"/api/average?frames=%d",frames[avg]); request(path,"POST",response); lastAverageSent=avg; }
             std::lock_guard<std::mutex> publish(mutex_);
-            for (TrollfxRta* p:clients_) p->update(s);
+            for (TrollfxRta* p:clients_) { p->setServiceState(serviceState_.load(std::memory_order_acquire)); if(s.ok)p->update(s);else p->offline(); }
         } else {
             lastAverageSent=-1;
             std::lock_guard<std::mutex> publish(mutex_);
-            for (TrollfxRta* p:clients_) p->offline();
+            for (TrollfxRta* p:clients_) { p->offline();p->setServiceState(serviceState_.load(std::memory_order_acquire)); }
         }
-        lock.lock(); cv_.wait_for(lock,std::chrono::milliseconds(1000/refreshHz),[this]{return stop_;});
+        lock.lock(); cv_.wait_for(lock,std::chrono::milliseconds(1000/refreshHz),[this]{return stop_.load(std::memory_order_acquire) || command_.load(std::memory_order_acquire)!=0 || modePending_.load(std::memory_order_acquire);});
     }
+    lock.unlock(); stopOwned();
 }
 
 } // namespace

@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <signal.h>
 #include <time.h>
+#include <errno.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/select.h>
@@ -53,15 +54,23 @@ static void*capture(void*arg){
  int (*drop)(snd_pcm_t*)=dlsym(lib,"snd_pcm_drop");
  int (*closepcm)(snd_pcm_t*)=dlsym(lib,"snd_pcm_close");
  const char*(*strerr)(int)=dlsym(lib,"snd_strerror");
- if(!op||!fv||!sp||!prep||!start||!rd||!drop||!closepcm||!strerr){fail("ALSA symbol missing");return NULL;}
- snd_pcm_t*p=NULL;int r=op(&p,dev,1,0);
- if(r>=0)r=sp(p,fv("S24_3LE"),3,2,48000,0,250000);
- if(r>=0)r=prep(p);
- if(r>=0)r=start(p);
- if(r<0){char msg[180];snprintf(msg,sizeof(msg),"ALSA setup: %s",strerr(r));fail(msg);if(p)closepcm(p);return NULL;}
+ if(!op||!fv||!sp||!prep||!start||!rd||!drop||!closepcm||!strerr){fail("ALSA symbol missing");dlclose(lib);return NULL;}
  uint8_t buf[1024*6];
- while(run){long n=rd(p,buf,1024);if(n<0){char msg[180];snprintf(msg,sizeof(msg),"ALSA read: %s",strerr((int)n));fail(msg);break;}for(long i=0;i<n;i++){uint8_t*q=buf+i*6;int32_t s=q[0]|(q[1]<<8)|(q[2]<<16);if(s&0x800000)s|=(int32_t)0xff000000;sample(s/8388608.f);}}
- drop(p);closepcm(p);dlclose(lib);return NULL;
+ while(run){
+  snd_pcm_t*p=NULL;int r=op(&p,dev,1,0);
+  if(r>=0)r=sp(p,fv("S24_3LE"),3,2,48000,0,250000);
+  if(r>=0)r=prep(p);
+  if(r>=0)r=start(p);
+  if(r<0){char msg[180];snprintf(msg,sizeof(msg),"ALSA setup: %s",strerr(r));fail(msg);if(p)closepcm(p);}
+  else {
+   pos=filled=hop=0;
+   pthread_mutex_lock(&mutex);mic=0;pthread_mutex_unlock(&mutex);
+   while(run){long n=rd(p,buf,1024);if(n<0){char msg[180];snprintf(msg,sizeof(msg),"ALSA read: %s",strerr((int)n));fail(msg);break;}for(long i=0;i<n;i++){uint8_t*q=buf+i*6;int32_t sample24=q[0]|(q[1]<<8)|(q[2]<<16);if(sample24&0x800000)sample24|=(int32_t)0xff000000;sample(sample24/8388608.f);}}
+   drop(p);closepcm(p);
+  }
+  if(run){struct timespec pause={2,0};while(run&&nanosleep(&pause,&pause)<0&&errno==EINTR){}}
+ }
+ dlclose(lib);return NULL;
 }
 static const char html[]=
 "<!doctype html><meta name='viewport' content='width=device-width,initial-scale=1'><title>TROLLfx RTA</title><style>*{box-sizing:border-box}body{margin:0;background:#080506;color:#ff6661;font-family:Arial,sans-serif}header{padding:10px 15px;border-bottom:1px solid #522;display:flex;justify-content:space-between;align-items:center}h1{margin:0;font-size:24px;letter-spacing:2px}main{padding:8px}.chart{display:flex;gap:2px;height:67vh;min-height:260px;border:1px solid #522;padding:8px;background:#090404}.bar{flex:1;min-width:0;display:flex;flex-direction:column}.bar[hidden]{display:none!important}.stack{flex:1;display:flex;flex-direction:column-reverse;gap:2px;position:relative}.seg{flex:1;background:#2b090b}.seg.on{background:#ed2229;box-shadow:0 0 4px #8c1118}.pk{position:absolute;left:0;right:0;height:3px;background:#ffad68}.f{text-align:center;color:#aa7777;font-size:clamp(6px,1vw,10px);padding-top:6px;white-space:nowrap}footer{display:flex;align-items:center;gap:15px;flex-wrap:wrap;padding:12px}button{padding:12px;background:#321012;color:#ff9990;border:1px solid #922;border-radius:4px}input{accent-color:red}#error{padding:10px;color:#c99}</style>"
@@ -100,6 +109,7 @@ static void handle(int fd){
 }
 static void term(int sig){(void)sig;run=0;}
 int main(int argc,char**argv){
+ long maxfd=sysconf(_SC_OPEN_MAX);if(maxfd<0||maxfd>8192)maxfd=8192;for(int fd=3;fd<maxfd;fd++)close(fd);
  const char*dev="hw:U18dB,0",*p0="calibration/7033298.txt",*p90="calibration/7033298_90deg.txt";int port=8096,orientation=0;for(int i=1;i<argc;i++){if(!strcmp(argv[i],"--device")&&i+1<argc)dev=argv[++i];else if(!strcmp(argv[i],"--port")&&i+1<argc)port=atoi(argv[++i]);else if(!strcmp(argv[i],"--cal-0")&&i+1<argc)p0=argv[++i];else if(!strcmp(argv[i],"--cal-90")&&i+1<argc)p90=argv[++i];else if(!strcmp(argv[i],"--orientation")&&i+1<argc)orientation=atoi(argv[++i]);else if(!strcmp(argv[i],"--sensitivity-dbfs-at-94")&&i+1<argc){spl_sensitivity=atof(argv[++i]);if(isfinite(spl_sensitivity))spl_reference_type=1;}}
  if(p0)ncal0=dsp_load_calibration(p0,cal0,1024,&mic_sens_factor);
  double sens90=NAN;if(p90)ncal90=dsp_load_calibration(p90,cal90,1024,&sens90);
@@ -109,8 +119,8 @@ int main(int argc,char**argv){
  for(int i=0;i<NB;i++)bars[i]=peaks[i]=-120;
  if(!dsp_init()){fprintf(stderr,"DSP initialization failed\n");return 1;}
  signal(SIGINT,term);signal(SIGTERM,term);signal(SIGPIPE,SIG_IGN);
- pthread_t t;if(pthread_create(&t,NULL,capture,(void*)dev)){perror("pthread_create");return 1;}
- int srv=socket(AF_INET,SOCK_STREAM,0);if(srv<0){perror("socket");return 1;}int yes=1;setsockopt(srv,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof yes);struct sockaddr_in addr={0};addr.sin_family=AF_INET;addr.sin_addr.s_addr=htonl(INADDR_LOOPBACK);addr.sin_port=htons(port);if(bind(srv,(void*)&addr,sizeof addr)||listen(srv,8)){perror("bind/listen");return 1;}fprintf(stderr,"TROLLfx RTA listening on 127.0.0.1:%d\n",port);
+ int srv=socket(AF_INET,SOCK_STREAM,0);if(srv<0){perror("socket");return 1;}int yes=1;setsockopt(srv,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof yes);struct sockaddr_in addr={0};addr.sin_family=AF_INET;addr.sin_addr.s_addr=htonl(INADDR_LOOPBACK);addr.sin_port=htons(port);if(bind(srv,(void*)&addr,sizeof addr)||listen(srv,8)){perror("bind/listen");close(srv);return 1;}fprintf(stderr,"TROLLfx RTA listening on 127.0.0.1:%d\n",port);
+ pthread_t t;if(pthread_create(&t,NULL,capture,(void*)dev)){perror("pthread_create");close(srv);return 1;}
  while(run){fd_set f;FD_ZERO(&f);FD_SET(srv,&f);struct timeval timeout={1,0};if(select(srv+1,&f,NULL,NULL,&timeout)>0){int fd=accept(srv,NULL,NULL);if(fd>=0){handle(fd);close(fd);}}}
  close(srv);pthread_cancel(t);pthread_join(t,NULL);return 0;
 }
