@@ -1,23 +1,50 @@
-name: V0.5 Sweep Lab prework
+name: V0.5 Sweep Lab DSP
 on:
   push:
     branches: [feature/v05-sweep-lab-prework]
   pull_request:
-    paths:
-      - 'scripts/make-sweep-fixture.py'
-      - 'tests/test_sweep_fixture.py'
-      - '.github/workflows/v05-sweep-prework.yml'
+    branches: [feature/force-native-rta-v04-auto-service]
 jobs:
-  synthetic-fixture:
+  dsp-and-arm-package:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Validate deterministic sweep fixture
-        run: python3 -m unittest discover -s tests -p test_sweep_fixture.py -v
-      - name: Generate reference and synthetic recording
-        run: python3 scripts/make-sweep-fixture.py --output build/sweep-fixture
-      - name: Preserve synthetic fixtures for offline DSP tests
+      - name: Install Python venv and build tools
+        run: sudo apt-get update && sudo apt-get install -y python3-venv g++ binutils
+      - name: Portable DSP and fixture tests
+        run: |
+          bash scripts/test-sweep-dsp.sh
+          python3 -m unittest discover -s tests -p 'test_sweep_fixture.py' -v
+          python3 -m unittest discover -s tests -p 'test_sweep_comparison.py' -v
+          python3 -m unittest discover -s tests -p 'test_sweep_cli.py' -v
+          python3 -m unittest discover -s tests -p 'test_sweep_service_api.py' -v
+      - name: Independent pyfar numerical reference
+        run: |
+          python3 -m venv "$RUNNER_TEMP/pyfar-venv"
+          "$RUNNER_TEMP/pyfar-venv/bin/pip" install -r requirements-sweep-reference.txt
+          PYTHONPATH="$RUNNER_TEMP/pyfar-venv/lib/python3.12/site-packages" \
+            "$RUNNER_TEMP/pyfar-venv/bin/python" -m unittest discover -s tests -p test_sweep_pyfar.py -v
+      - name: Get pinned MPC Plugin Builder SDK
+        run: |
+          git clone https://github.com/inmusic-software/mpc-plugin-builder-sdk.git "$RUNNER_TEMP/mpc-plugin-builder-sdk"
+          git -C "$RUNNER_TEMP/mpc-plugin-builder-sdk" checkout febd2ca5bd9eb16c4a412837196e145566bc981b
+      - name: Install pinned Zig toolchain and skin build dependencies
+        run: |
+          python3 -m pip install --target "$RUNNER_TEMP/v05-python" ziglang==0.17.1 Pillow==10.4.0
+          echo "PYTHONPATH=$RUNNER_TEMP/v05-python" >> "$GITHUB_ENV"
+      - name: Preserve and verify V0.4 baseline package
+        env:
+          MPC_SDK_DIR: ${{ runner.temp }}/mpc-plugin-builder-sdk
+          SDK_ZIG_PYTHON: /usr/bin/python3
+        run: bash scripts/build-force-v04.sh
+      - name: Build and verify ARMv7 hard-float offline DSP utility
+        env:
+          SDK_ZIG_PYTHON: /usr/bin/python3
+        run: bash scripts/build-sweep-v05-dsp-package.sh
+      - name: Upload ARMv7 DSP candidate (not a VST update)
         uses: actions/upload-artifact@v4
         with:
-          name: v05-synthetic-two-tap-reference
-          path: build/sweep-fixture/
+          name: trollfx-sweep-lab-v05-dsp-armv7-candidate
+          path: |
+            dist/force-native-v05-dsp-candidate.tar.gz
+            dist/force-native-v05-dsp-candidate.tar.gz.sha256
