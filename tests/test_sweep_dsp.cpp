@@ -10,6 +10,12 @@ int main(){
     using namespace trollfx::sweep;
     SweepOptions so;so.sampleRate=8000;so.durationSeconds=1;so.startHz=40;so.stopHz=3000;so.peakDbfs=-30;so.fadeSeconds=.01;
     std::string error;auto x=generate(so);assert(x.size()==8000);assert(std::abs(x.front())<1e-12&&std::abs(x.back())<1e-12);
+    std::vector<double> tone441(44100);for(std::size_t i=0;i<tone441.size();i++)tone441[i]=0.5*std::sin(2*3.14159265358979323846*10000*i/44100.0);
+    std::vector<double> tone480;assert(resampleMono(tone441,44100,48000,tone480,&error));assert(tone480.size()==48000);
+    double rms=0;for(std::size_t i=500;i+500<tone480.size();i++)rms+=tone480[i]*tone480[i];rms=std::sqrt(rms/(tone480.size()-1000));
+    assert(std::abs(rms-0.5/std::sqrt(2.0))<0.002);
+    std::vector<double> down;assert(resampleMono(tone480,48000,44100,down,&error));assert(down.size()==44100);
+    std::vector<double> invalid;assert(!resampleMono(tone441,0,48000,invalid,&error));
     so.stopHz=4000;assert(!validate(so,&error));so.stopHz=3000;
     // Known room: delayed direct arrival plus one reflection at +280 samples.
     const std::size_t lead=1000,direct=96,echo=376,tail=400;

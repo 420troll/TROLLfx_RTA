@@ -1,4 +1,5 @@
 #include <dlfcn.h>
+#include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -39,19 +40,46 @@ int main(int argc,char**argv) {
         e->dispatcher(e,effSetBlockSize,0,128,nullptr,0);
         e->dispatcher(e,effMainsChanged,0,1,nullptr,0);
     }
-    if(a->numParams!=115){std::printf("FAIL appended V0.4 parameter count: %d\n",a->numParams);return 1;}
+    if(a->numParams!=122){std::printf("FAIL appended V0.5 parameter count: %d\n",a->numParams);return 1;}
     char parameterName[64]{};a->dispatcher(a,effGetParamName,110,0,parameterName,0.0f);
     if(std::strcmp(parameterName,"Peak Fall")!=0){std::printf("FAIL V0.3 parameter ordering changed at 110: %s\n",parameterName);return 1;}
     a->dispatcher(a,effGetParamName,111,0,parameterName,0.0f);
     if(std::strcmp(parameterName,"Service Mode")!=0){std::printf("FAIL V0.4 controls were not appended: %s\n",parameterName);return 1;}
+    a->dispatcher(a,effGetParamName,114,0,parameterName,0.0f);
+    if(std::strcmp(parameterName,"Service Status")!=0){std::printf("FAIL V0.4 parameter 114 moved: %s\n",parameterName);return 1;}
+    a->dispatcher(a,effGetParamName,115,0,parameterName,0.0f);
+    if(std::strcmp(parameterName,"SWEEP START")!=0||a->getParameter(a,115)!=0.0f||a->getParameter(a,116)!=0.0f||a->getParameter(a,117)!=0.0f){std::printf("FAIL V0.5 sweep controls/defaults: %s\n",parameterName);return 1;}
     if(argc>=3) {
         const char* mode=argv[2];
         auto display=[&](AEffect* e,int index){char out[64]{};e->dispatcher(e,effGetParamDisplay,index,0,out,0.0f);return std::string(out);};
+        if(std::strcmp(mode,"--sweep-playback")==0){
+            a->setParameter(a,118,0.0f); // minimum 0.5 s sweep; all work remains on the worker
+            a->setParameter(a,115,1.0f);
+            const auto armed=std::chrono::steady_clock::now()+std::chrono::seconds(5);
+            while(display(a,117)!="CAPTURING"&&std::chrono::steady_clock::now()<armed)std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            if(display(a,117)!="CAPTURING"){std::printf("FAIL sweep never reached CAPTURING: %s\n",display(a,117).c_str());return 1;}
+            float il[128],ir[128],ol[128]{},orr[128]{};float peak=0;size_t sweepFrames=0;
+            for(int block=0;block<600;block++){
+                for(int i=0;i<128;i++){il[i]=0.013f;ir[i]=-0.021f;ol[i]=orr[i]=0;}
+                float* in[]={il,ir};float* out[]={ol,orr};a->processReplacing(a,in,out,128);
+                for(int i=0;i<128;i++)if(ol[i]==orr[i]&&ol[i]!=il[i]){++sweepFrames;peak=std::max(peak,std::abs(ol[i]));}
+                if(sweepFrames>70000)break;
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+            const auto complete=std::chrono::steady_clock::now()+std::chrono::seconds(8);
+            while(display(a,117)!="READY"&&std::chrono::steady_clock::now()<complete)std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            if(sweepFrames<1000||peak>0.04f||display(a,117)!="READY"){std::printf("FAIL sweep output/capture analysis: frames=%zu peak=%.4f state=%s\n",sweepFrames,peak,display(a,117).c_str());return 1;}
+            for(int i=0;i<128;i++){il[i]=0.013f;ir[i]=-0.021f;ol[i]=orr[i]=0;}
+            float* in[]={il,ir};float* out[]={ol,orr};a->processReplacing(a,in,out,128);
+            for(int i=0;i<128;i++)if(ol[i]!=il[i]||orr[i]!=ir[i]){std::puts("FAIL normal pass-through did not resume after sweep error");return 1;}
+            for(AEffect* e:{a,b}){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);}dlclose(lib);
+            std::printf("PASS explicit sweep emits safe identical stereo signal, then returns to pass-through (%zu sweep frames)\n",sweepFrames);return 0;
+        }
         if(std::strcmp(mode,"--saved-state-compat")==0){
             if(argc!=4)return 2;
             std::ifstream file(argv[3],std::ios::binary);std::vector<char> chunk((std::istreambuf_iterator<char>(file)),{});
             if(chunk.size()<12||std::memcmp(chunk.data(),"MPCP",4)!=0||a->dispatcher(a,effSetChunk,0,(VstIntPtr)chunk.size(),chunk.data(),0.0f)!=1){std::puts("FAIL loading V0.3 state chunk");return 1;}
-            if(std::fabs(a->getParameter(a,101)-27.0f/48.0f)>0.002f||std::fabs(a->getParameter(a,110)-40.0f/58.0f)>0.002f||a->getParameter(a,111)!=0||a->getParameter(a,112)!=0||a->getParameter(a,113)!=0){std::puts("FAIL V0.3 parameter values or appended V0.4 defaults changed");return 1;}
+            if(std::fabs(a->getParameter(a,101)-27.0f/48.0f)>0.002f||std::fabs(a->getParameter(a,110)-40.0f/58.0f)>0.002f||a->getParameter(a,111)!=0||a->getParameter(a,112)!=0||a->getParameter(a,113)!=0||a->getParameter(a,115)!=0||a->getParameter(a,116)!=0||a->getParameter(a,117)!=0){std::puts("FAIL V0.3 parameter values or appended V0.4/V0.5 defaults changed");return 1;}
             for(AEffect* e:{a,b}){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);}dlclose(lib);std::puts("PASS V0.3 saved-state chunk loads unchanged and appended controls default safely");return 0;
         }
         const char* pidPath=std::getenv("TROLLFX_RTA_TEST_PIDFILE"); if(!pidPath){std::puts("FAIL missing mock service PID file setting");return 1;}

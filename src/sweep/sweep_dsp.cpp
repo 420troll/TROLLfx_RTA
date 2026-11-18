@@ -61,6 +61,27 @@ bool validate(const SweepOptions& o,std::string* e) {
     return true;
 }
 
+bool resampleMono(const std::vector<double>& input,unsigned inputRate,unsigned outputRate,std::vector<double>& output,std::string* e) {
+    output.clear();
+    if(input.empty()||inputRate<8000||inputRate>192000||outputRate<8000||outputRate>192000)return fail(e,"resampler rates or input are invalid");
+    const std::size_t count=static_cast<std::size_t>(std::llround(static_cast<double>(input.size())*outputRate/inputRate));
+    if(count<2||count>8u*1024u*1024u)return fail(e,"resampled sweep exceeds the 8M sample safety limit");
+    output.resize(count);constexpr int radius=32;
+    const double ratio=static_cast<double>(inputRate)/outputRate,cutoff=std::min(1.0,static_cast<double>(outputRate)/inputRate);
+    for(std::size_t n=0;n<count;n++){
+        const double at=n*ratio;const long center=static_cast<long>(std::floor(at));double sum=0,weight=0;
+        for(int tap=-radius+1;tap<=radius;tap++){
+            const long index=center+tap;if(index<0||static_cast<std::size_t>(index)>=input.size())continue;
+            const double x=at-static_cast<double>(index);if(std::abs(x)>=radius)continue;
+            const double sx=cutoff*x;const double sinc=std::abs(sx)<1e-12?1.0:std::sin(pi*sx)/(pi*sx);
+            const double window=0.5+0.5*std::cos(pi*x/radius);const double w=cutoff*sinc*window;
+            sum+=input[static_cast<std::size_t>(index)]*w;weight+=w;
+        }
+        output[n]=std::abs(weight)>1e-12?sum/weight:0.0;
+    }
+    return true;
+}
+
 std::vector<double> generate(const SweepOptions& o) {
     if(!validate(o)) return {};
     const std::size_t n=static_cast<std::size_t>(std::llround(o.sampleRate*o.durationSeconds));

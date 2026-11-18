@@ -73,6 +73,9 @@ struct ClockAlignment {
 };
 
 bool validate(const SweepOptions& options, std::string* error = nullptr);
+bool resampleMono(const std::vector<double>& input, unsigned inputRate,
+                  unsigned outputRate, std::vector<double>& output,
+                  std::string* error = nullptr);
 std::vector<double> generate(const SweepOptions& options);
 MeasurementSignal generateMeasurementSignal(const SweepOptions& options,
                                              double preRollSeconds = 0.25,

@@ -32,19 +32,15 @@ jobs:
         run: |
           python3 -m pip install --target "$RUNNER_TEMP/v05-python" ziglang==0.17.1 Pillow==10.4.0
           echo "PYTHONPATH=$RUNNER_TEMP/v05-python" >> "$GITHUB_ENV"
-      - name: Preserve and verify V0.4 baseline package
+      - name: Build, test and package V0.5 native plugin and services
         env:
           MPC_SDK_DIR: ${{ runner.temp }}/mpc-plugin-builder-sdk
           SDK_ZIG_PYTHON: /usr/bin/python3
-        run: bash scripts/build-force-v04.sh
-      - name: Build and verify ARMv7 hard-float offline DSP utility
-        env:
-          SDK_ZIG_PYTHON: /usr/bin/python3
-        run: bash scripts/build-sweep-v05-dsp-package.sh
-      - name: Upload ARMv7 DSP candidate (not a VST update)
+        run: bash scripts/build-force-v05.sh
+      - name: Upload controlled-install ARMv7 hardware test package
         uses: actions/upload-artifact@v4
         with:
-          name: trollfx-sweep-lab-v05-dsp-armv7-candidate
+          name: trollfx-sweep-lab-v05-akai-force
           path: |
-            dist/force-native-v05-dsp-candidate.tar.gz
-            dist/force-native-v05-dsp-candidate.tar.gz.sha256
+            dist/force-native-v05-package.tar.gz
+            dist/force-native-v05-package.tar.gz.sha256

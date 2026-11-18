@@ -1,9 +1,10 @@
-# Sweep Lab V0.5 — offline DSP kernel
+# Sweep Lab V0.5 — DSP, capture and native sweep workflow
 
-This phase adds a portable host-side/ARMv7 offline analyzer and an opt-in
-recording API. It does not change the V0.4 VST, its UID/parameters, Force
-routing, or normal live RTA behavior. The executable accepts completed WAV
-files; it neither plays the sweep nor opens the UMIK.
+V0.5 adds a portable host-side/ARMv7 offline analyzer, opt-in recording API,
+and appended native VST controls for safe sweep playback. The VST UID `TfRA`
+and all V0.4 parameters (0–114) remain unchanged; V0.5 adds controls at 115–121.
+No sweep runs automatically. Normal live RTA behavior and Force routing remain
+independent.
 
 The existing service now has an opt-in exclusive recording API
 (`POST /api/sweep/arm?seconds=N`, `GET /api/sweep/status`,
@@ -16,9 +17,15 @@ If a controller disappears mid-run, capture is bounded by its requested sample
 limit; a completed recording is released back to live analysis after a 15-second
 download window. Explicit cancel also releases READY/ERROR sessions.
 Automated tests exercise missing-mic rejection, mock capture, paused live FFT,
-float WAV validity, and a single ALSA open. The current V0.4 plugin does not call
-these endpoints; native sweep controls and Force-host playback coordination
-remain unimplemented in this phase.
+float WAV validity, and a single ALSA open. The V0.5 native worker waits for a
+live analyzer, exclusively arms recording, then marks the audio-thread sweep
+buffer active only after capture reports CAPTURING. The audio callback performs
+no file/network/FFT work; playback replaces both effect outputs with the same
+precomputed signal, at a default -30 dBFS peak (parameter range -60 to -12 dBFS),
+then resumes passthrough. CANCEL fades the sweep to passthrough over 10 ms.
+Worker-side marker fitting, recording download, response/IR analysis, calibration
+correction and persistent artifact writing begin after the playback buffer ends.
+An invalid capture is visibly ERROR and releases capture ownership.
 
 ## Sweep and analysis
 
@@ -27,7 +34,10 @@ The generator implements the handoff's time-domain exponential sine sweep:
 `L = T / ln(f1/f0)` and `x(t) = A sin(2π f0 L (exp(t/L) - 1))`.
 
 It uses a linear edge fade (default 10 ms), 48 kHz, 20 Hz–20 kHz, 10 seconds,
-and -30 dBFS peak. The upper edge is constrained below 0.45 sample rate. Limits
+and -30 dBFS peak. The native VST generates at the Force host rate, then uses a
+32-tap windowed-sinc resampler to form the 48 kHz analysis reference expected by
+the UMIK service. The playback output itself is never resampled in the callback.
+Sweep stop frequency is capped to 0.45 of the host rate. Limits
 are 8–192 kHz, 0.1–30 seconds, -60 to -6 dBFS and 8 million samples per input.
 Generator and WAV values are finite and bounded. Mono and multichannel WAV input
 is supported; channels are arithmetically averaged.
@@ -70,13 +80,16 @@ to the transfer spectrum and recovered impulse response. Orientation and the
 2.7673 dB sensitivity factor are recorded; the factor remains metadata and is
 never converted into an absolute SPL anchor. Both original calibration files
 are included in the ARM DSP candidate.
-The comparison script interpolates both saved curves on 512 log-spaced points
+The VST stores each completed session beneath `Service/sessions/` beside the
+bundled service and calibration data. The comparison script can be used from a
+development computer to interpolate both saved curves on 512 log-spaced points
 and writes A/B SVG and difference CSV. These are local artifacts, not a runtime
 graph in the MPC plugin UI.
 
 ## Numerical verification
 
-`scripts/test-sweep-dsp.sh` compiles and runs portable C++ tests. The synthetic
+`scripts/test-sweep-dsp.sh` compiles and runs portable C++ tests, including
+44.1↔48 kHz resampler tone-amplitude checks. The synthetic
 two-tap fixture has a 0.5 direct path and 0.125 reflection separated by 280
 samples. Tests check peak timing, relative gain, pure-gain response, 100 ppm
 two-marker drift estimation/correction, clipping rejection, bounded invalid
@@ -106,23 +119,24 @@ same-sweep recording analyzed in 1.79 seconds with peak resident memory of
 measurement. The existing live V0.2 DSP benchmark still reports separately in
 `scripts/test-force-v04.sh`.
 
-Build the ARM package with `scripts/build-sweep-v05-dsp-package.sh` and verify
-it with `scripts/verify-sweep-v05-dsp-package.sh`. The archive is a DSP test
-candidate, not an installable VST package. Verify its checksum with
-`cd dist && sha256sum -c force-native-v05-dsp-candidate.tar.gz.sha256`. Hardware gates
-are listed in [SWEEP-LAB-V05-HARDWARE-ACCEPTANCE.md](SWEEP-LAB-V05-HARDWARE-ACCEPTANCE.md).
+Build the full ARM plugin package with `scripts/build-force-v05.sh`. It builds
+the SDK-native and ARM32/ARM64 VSTs, bundles the ARMv7 analyzer and CLI, verifies
+UID/ABI/parameters/assets, runs host and package rollback tests, then writes
+`dist/force-native-v05-package.tar.gz` plus its checksum. This package is for
+controlled hardware installation and is not deployed automatically. Hardware
+gates are listed in [SWEEP-LAB-V05-HARDWARE-ACCEPTANCE.md](SWEEP-LAB-V05-HARDWARE-ACCEPTANCE.md).
 
 ## Remaining integration gates
 
-- Connect the native plugin worker to the exclusive capture API and compute
-  results only after capture completes.
-- Add explicit, capped Force output playback, cancel/fades and a nonblocking
-  plugin handshake; no playback is implemented in this DSP-only phase.
-- Keep completed session artifacts in persistent plugin storage.
+- Verify explicit playback and capture timing on Force through both common
+  project sample rates; automated mocks verify host-rate output and passthrough
+  but not analog routing or clocks.
+- Verify cancellation and analyzer recovery under real audio load.
+- Confirm `Service/sessions/` is writable and persistent on installed media.
 - The pinned [MPC SDK Plotter documentation](https://github.com/inmusic-software/mpc-plugin-builder-sdk/blob/febd2ca5bd9eb16c4a412837196e145566bc981b/docs/ui-reference.md#616-plotter-less-tested)
   marks Plotter less tested and binds it to one parameter value; it has no
   arbitrary multi-bin series interface. The SDK host simulator exercises VST
   processing/parameters, not native skin rendering, so dynamic graph behavior
   is not verified. No dynamic graph is claimed; full plots are saved SVG/CSV.
-- Build and test the integrated VST/daemon package on the Force. This DSP test
-  candidate is not an installable V0.5 plugin and is not deployed.
+- Build and test the integrated VST/daemon package on the Force; this branch
+  makes no real Force installation or performance claim.
