@@ -19,6 +19,7 @@ def free_port():
 class Handler(http.server.BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
     capture_wav = b""
+    arm_count = 0
 
     def log_message(self, *_args):
         pass
@@ -50,6 +51,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
     def do_POST(self):
         if self.path.startswith("/api/sweep/arm?"):
+            Handler.arm_count += 1
             self.reply('{"ok":true,"state":"ARMED","sample_rate_hz":48000}')
         elif self.path == "/api/sweep/finish":
             self.reply('{"ok":true,"state":"READY","samples":100,"clipped_samples":0}')
@@ -70,11 +72,16 @@ def main():
     env = os.environ.copy()
     env["TROLLFX_RTA_PORT"] = str(port)
     try:
+        sessions = pathlib.Path(sys.argv[2]).resolve().parent.parent / "Service" / "sessions"
+        sessions.mkdir(parents=True, exist_ok=True)
+        for name in ("sweep-0001", "sweep-0002"):
+            old = sessions / name; old.mkdir(exist_ok=True)
+            (old / "frequency-response.csv").write_text("frequency_hz,magnitude,gain_db,phase_rad\n20,0.5,-6.0206,0\n1000,0.5,-6.0206,0\n20000,0.5,-6.0206,0\n")
+            (old / "measurement.json").write_text('{"format":"V0.5 legacy","clipped_samples":0}\n')
         result = subprocess.run([sys.argv[1], pathlib.Path(sys.argv[2]).resolve(), "--sweep-playback"],
                                 env=env, timeout=20, check=False)
         if result.returncode:
             raise SystemExit(result.returncode)
-        sessions = pathlib.Path(sys.argv[2]).resolve().parent.parent / "Service" / "sessions"
         found = sorted(sessions.glob("sweep-*/measurement.json"))
         if not found:
             raise SystemExit("VST worker completed without saving measurement.json")
@@ -86,6 +93,13 @@ def main():
         metadata = json.loads((session / "measurement.json").read_text())
         if not metadata.get("marker_alignment_valid"):
             raise SystemExit("saved sweep session lacks valid two-marker alignment")
+        if metadata.get("response_smoothing_octaves") is not None:
+            raise SystemExit("changing smoothing did not reprocess the selected session")
+        if Handler.arm_count != 1:
+            raise SystemExit(f"smoothing change restarted sweep capture {Handler.arm_count} times")
+        previous_two = json.loads((sessions / "sweep-0002" / "measurement.json").read_text())
+        if previous_two.get("smoothing_algorithm_version") != 1 or "response_smoothing_octaves" not in previous_two:
+            raise SystemExit("saved-measurement selection did not reprocess Previous 2")
         print(f"PASS completed VST sweep saved aligned response, IR and graphs at {session}")
     finally:
         server.shutdown()

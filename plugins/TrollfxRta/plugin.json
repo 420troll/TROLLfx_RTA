@@ -1,7 +1,7 @@
 {
   "name": "TROLLfx - VST - RTA",
   "manufacturer": "TROLLfx",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "format": "vst2",
   "kind": "effect",
   "uid": "TfRA",
@@ -10,7 +10,7 @@
   "category": "Effect",
   "file32": "VST/trollfx-rta-arm32.so",
   "file64": "VST/trollfx-rta-arm64.so",
-  "description": "TROLLfx RTA live analyzer with opt-in offline sweep measurement",
+  "description": "TROLLfx RTA with offline sweep measurements and reversible fractional-octave response smoothing",
   "author": "TROLLfx",
   "license": "MIT"
 }

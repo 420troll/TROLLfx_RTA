@@ -3,7 +3,9 @@
 #include <cassert>
 #include <cmath>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <iterator>
 #include <vector>
 
 int main(){
@@ -65,5 +67,18 @@ int main(){
     assert(analyze(x,noisy,ao,corrected,&error));for(double v:corrected.impulse)assert(std::isfinite(v));
     const auto dir=std::filesystem::temp_directory_path()/"trollfx-sweep-dsp-test";std::filesystem::remove_all(dir);assert(writeArtifacts(dir.string(),corrected,8000,40,3000,&error));
     assert(std::filesystem::exists(dir/"impulse.wav")&&std::filesystem::exists(dir/"frequency-response.csv")&&std::filesystem::exists(dir/"frequency-response.svg")&&std::filesystem::exists(dir/"measurement.json"));std::filesystem::remove_all(dir);
+    // Fractional-octave smoothing is magnitude-domain and log-frequency based.
+    std::vector<double> freq,flatMag,peakMag;for(int i=0;i<=1200;i++){double hz=20*std::pow(1000.0,i/1200.0);freq.push_back(hz);flatMag.push_back(0.5);double z=std::log2(hz/1000.0);peakMag.push_back(0.5+2.0*std::exp(-0.5*(z/.018)*(z/.018)));}
+    std::vector<double> sm;assert(fractionalOctaveSmooth(freq,flatMag,6,sm,&error));for(double v:sm)assert(std::abs(v-.5)<1e-10);
+    assert(fractionalOctaveSmooth(freq,peakMag,0,sm,&error));assert(sm==peakMag);const std::size_t peakIndex=static_cast<std::size_t>(std::round(std::log(1000.0/20.0)/std::log(1000.0)*1200));double lastPeak=peakMag[peakIndex];for(unsigned n:{48u,24u,12u,6u,3u}){assert(fractionalOctaveSmooth(freq,peakMag,n,sm,&error));assert(sm[peakIndex]<lastPeak);lastPeak=sm[peakIndex];assert(std::abs(sm.front()-peakMag.front())<1e-7&&std::abs(sm.back()-peakMag.back())<1e-7);}
+    // Reprocessing a legacy session preserves its raw CSV and impulse file.
+    auto session=std::filesystem::temp_directory_path()/"trollfx-sweep-smoothing-test";std::filesystem::remove_all(session);std::filesystem::create_directories(session);
+    {std::ofstream csv(session/"frequency-response.csv");csv<<"frequency_hz,magnitude,gain_db,phase_rad\n";for(std::size_t i=0;i<freq.size();++i)csv<<freq[i]<<','<<peakMag[i]<<','<<20*std::log10(peakMag[i])<<",0.25\n";}
+    {std::ofstream json(session/"measurement.json");json<<"{\"format\":\"TROLLfx Sweep Lab V0.5\",\"clipped_samples\":0}\n";}
+    {std::ofstream ir(session/"impulse.wav");ir<<"preserve";}
+    const auto rawBefore=std::filesystem::file_size(session/"frequency-response.csv");assert(reprocessSession(session.string(),6,1000,true,&error));assert(std::filesystem::file_size(session/"frequency-response.csv")==rawBefore);
+    std::ifstream graph(session/"frequency-response.svg");std::string svg((std::istreambuf_iterator<char>(graph)),{});assert(svg.find("1/6 octave")!=std::string::npos&&svg.find("y=\"548\"")!=std::string::npos&&svg.find("Frequency (Hz)")!=std::string::npos);std::size_t lineCommands=0,pos=0;while((pos=svg.find(" L",pos))!=std::string::npos){++lineCommands;pos+=2;}assert(lineCommands==2*(freq.size()-1));
+    assert(reprocessSession(session.string(),3,1000,true,&error));std::ifstream metadata(session/"measurement.json");std::string meta((std::istreambuf_iterator<char>(metadata)),{});assert(meta.find("clipped_samples")!=std::string::npos&&meta.find("smoothing_algorithm_version")!=std::string::npos&&meta.find("response_smoothing_octaves\": 3")!=std::string::npos);assert(meta.find("smoothing_algorithm_version",meta.find("smoothing_algorithm_version")+1)==std::string::npos);
+    std::ifstream impulse(session/"impulse.wav");std::string irText((std::istreambuf_iterator<char>(impulse)),{});assert(irText=="preserve");{std::ofstream bad(session/"measurement.json");bad<<"{\"clipped_samples\": 4}";}assert(!reprocessSession(session.string(),6,1000,true,&error)&&error.find("clipped")!=std::string::npos);std::filesystem::remove_all(session);
     std::cout<<"sweep DSP: generator, deconvolution, gain, reflection, two-marker drift estimate/correction, clipping, noise, exports PASS\n";
 }

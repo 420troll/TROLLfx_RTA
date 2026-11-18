@@ -49,6 +49,14 @@ class TestSweepCLI(unittest.TestCase):
             self.assertEqual((output / "calibration-used.txt").read_bytes(), cal.read_bytes())
             for name in ("reference.wav", "capture.wav", "impulse.wav", "frequency-response.csv", "frequency-response.svg", "measurement.json", "reference.wav.json"):
                 self.assertTrue((output / name).exists(), name)
+            raw_before = (output / "frequency-response.csv").read_bytes()
+            for choice, denominator in (("none", None), ("1/48", 48), ("1/24", 24), ("1/12", 12), ("1/6", 6), ("1/3", 3)):
+                subprocess.run([str(CLI), "reprocess", str(output), choice], check=True, capture_output=True)
+                self.assertEqual((output / "frequency-response.csv").read_bytes(), raw_before)
+                settings = json.loads((output / "measurement.json").read_text())
+                self.assertEqual(settings["response_smoothing_octaves"], denominator)
+                self.assertEqual(settings["smoothing_algorithm_version"], 1)
+                self.assertTrue((output / "frequency-response-smoothed.csv").exists())
 
 
 if __name__ == "__main__": unittest.main()

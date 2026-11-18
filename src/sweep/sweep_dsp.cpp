@@ -12,6 +12,8 @@
 #include <sstream>
 #include <iomanip>
 #include <iterator>
+#include <cctype>
+#include <mutex>
 
 namespace trollfx::sweep {
 namespace {
@@ -292,14 +294,10 @@ bool writeFloatWav(const std::string& path,const std::vector<double>& samples,un
     for(double d:samples){float x=static_cast<float>(d);f.write(reinterpret_cast<char*>(&x),4);}return static_cast<bool>(f)||fail(e,"failed writing float WAV");
 }
 
-bool writeArtifacts(const std::string& dir,const AnalysisResult& r,unsigned fs,double f0,double f1,std::string* e) {
+bool writeArtifacts(const std::string& dir,const AnalysisResult& r,unsigned fs,double f0,double f1,std::string* e,unsigned smoothing) {
     std::error_code ec;std::filesystem::create_directories(dir,ec);if(ec)return fail(e,"cannot create output directory");
     if(!writeFloatWav(dir+"/impulse.wav",r.impulse,fs,e))return false;
     {std::ofstream f(dir+"/frequency-response.csv");if(!f)return fail(e,"cannot write response CSV");f<<"frequency_hz,magnitude,gain_db,phase_rad\n";for(std::size_t i=0;i<r.frequencyHz.size();i++)if(r.frequencyHz[i]>=f0&&r.frequencyHz[i]<=f1)f<<r.frequencyHz[i]<<','<<r.magnitude[i]<<','<<r.magnitudeDb[i]<<','<<r.phaseRadians[i]<<'\n';}
-    {std::ofstream f(dir+"/frequency-response.svg");if(!f)return fail(e,"cannot write response SVG");f<<"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1200\" height=\"640\" viewBox=\"0 0 1200 640\"><rect width=\"100%\" height=\"100%\" fill=\"#101010\"/><text x=\"600\" y=\"32\" fill=\"white\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"20\">Sweep frequency response</text>";
-        for(int db=-60;db<=30;db+=10){int y=70+(30-db)*7;f<<"<path d=\"M80 "<<y<<" H1160\" stroke=\"#444\"/><text x=\"72\" y=\""<<y+5<<"\" fill=\"#aaa\" text-anchor=\"end\" font-size=\"12\">"<<db<<" dB</text>";}
-        for(double hz:{20.,100.,1000.,10000.,20000.}){double x=80+1080*std::log(hz/f0)/std::log(f1/f0);if(hz>=f0&&hz<=f1)f<<"<path d=\"M"<<x<<" 70 V490\" stroke=\"#333\"/><text x=\""<<x<<"\" y=\"512\" fill=\"#aaa\" text-anchor=\"middle\" font-size=\"12\">"<<hz<<" Hz</text>";}
-        bool begun=false;f<<"<path d=\"";for(std::size_t i=0;i<r.frequencyHz.size();i++){double hz=r.frequencyHz[i];if(hz<f0||hz>f1||r.magnitudeDb[i]<-60||r.magnitudeDb[i]>30)continue;double x=80+1080*std::log(hz/f0)/std::log(f1/f0),y=70+(30-r.magnitudeDb[i])*7;f<<(begun?" L":"M")<<x<<' '<<y;begun=true;}f<<"\" fill=\"none\" stroke=\"#ff3030\" stroke-width=\"2\"/></svg>";}
     {
         std::ofstream f(dir+"/measurement.json");if(!f)return fail(e,"cannot write measurement metadata");
         f<<"{\n  \"format\": \"TROLLfx Sweep Lab V0.5\",\n  \"sample_rate_hz\": "<<fs<<",\n  \"start_hz\": "<<f0<<",\n  \"stop_hz\": "<<f1<<",\n  \"impulse_peak_sample\": "<<r.impulsePeak<<",\n  \"clipped_samples\": "<<r.clippedSamples<<",\n  \"input_peak\": "<<r.inputPeak<<",\n  \"clock_correction_ppm\": "<<r.residualClockPpm<<",\n  \"marker_alignment_valid\": "<<(r.markerAlignmentValid?"true":"false")<<",\n  \"captured_first_marker_sample\": ";
@@ -312,6 +310,82 @@ bool writeArtifacts(const std::string& dir,const AnalysisResult& r,unsigned fs,d
         f<<",\n  \"calibration_hash_fnv1a64\": ";if(r.calibrationOrientationDeg>=0)f<<"\""<<std::hex<<std::setw(16)<<std::setfill('0')<<r.calibrationHashFnv1a64<<std::dec<<"\"";else f<<"null";
         f<<",\n  \"absolute_spl_status\": \"PROVISIONAL\"\n}\n";
     }
+    ResponseCurve raw; if(!readResponseCsv(dir+"/frequency-response.csv",raw,e))return false;
+    if(!writeSmoothedArtifacts(dir,raw,smoothing,1000.0,true,e))return false;
     return true;
+}
+
+namespace {
+bool validResolution(unsigned n) { return n==0||n==3||n==6||n==12||n==24||n==48; }
+double interpLog(const std::vector<double>& x,const std::vector<double>& y,double q) {
+    auto it=std::lower_bound(x.begin(),x.end(),q); if(it==x.begin())return y.front(); if(it==x.end())return y.back();
+    const std::size_t b=static_cast<std::size_t>(it-x.begin()),a=b-1;
+    const double t=std::log(q/x[a])/std::log(x[b]/x[a]); return y[a]+t*(y[b]-y[a]);
+}
+std::string smoothingName(unsigned n) { if(!n)return "none"; return "1/"+std::to_string(n)+" octave"; }
+}
+
+bool fractionalOctaveSmooth(const std::vector<double>& f,const std::vector<double>& m,unsigned n,std::vector<double>& out,std::string* e) {
+    if(!validResolution(n)||f.size()!=m.size()||f.size()<2)return fail(e,"invalid response or smoothing resolution");
+    for(std::size_t i=0;i<f.size();++i)if(!std::isfinite(f[i])||f[i]<=0||!std::isfinite(m[i])||m[i]<0||(i&&f[i]<=f[i-1]))return fail(e,"response frequencies must be positive, increasing, with finite nonnegative magnitudes");
+    if(!n){out=m;return true;} out.resize(m.size()); const double half=std::log(2.0)/(2.0*n);
+    std::vector<double> logf(f.size()),prefix(f.size(),0.0);for(std::size_t i=0;i<f.size();++i){logf[i]=std::log(f[i]);if(i)prefix[i]=prefix[i-1]+(logf[i]-logf[i-1])*(m[i]+m[i-1])*0.5;}
+    auto integral=[&](double x){if(x<=logf.front())return 0.0;if(x>=logf.back())return prefix.back();auto it=std::upper_bound(logf.begin(),logf.end(),x);const std::size_t b=static_cast<std::size_t>(it-logf.begin()),a=b-1;const double t=(x-logf[a])/(logf[b]-logf[a]),y=m[a]+t*(m[b]-m[a]);return prefix[a]+(x-logf[a])*(m[a]+y)*0.5;};
+    for(std::size_t k=0;k<f.size();++k) {
+        const double center=logf[k],lo=std::max(logf.front(),center-half),hi=std::min(logf.back(),center+half);
+        if(hi<=lo){out[k]=m[k];continue;}out[k]=(integral(hi)-integral(lo))/(hi-lo);
+    }
+    return true;
+}
+
+double responseDbAt(const std::vector<double>& f,const std::vector<double>& m,double q) {
+    if(f.size()!=m.size()||f.empty()||q<f.front()||q>f.back()||q<=0)return std::numeric_limits<double>::quiet_NaN();
+    const double v=interpLog(f,m,q);return v>0?20.0*std::log10(v):-std::numeric_limits<double>::infinity();
+}
+
+bool readResponseCsv(const std::string& path,ResponseCurve& r,std::string* e) {
+    std::ifstream in(path);if(!in)return fail(e,"cannot open raw response CSV");std::string line;std::getline(in,line);
+    if(line!="frequency_hz,magnitude,gain_db,phase_rad")return fail(e,"unsupported response CSV header");
+    r=ResponseCurve{};while(std::getline(in,line)){std::istringstream s(line);std::string a,b,c,d;if(!std::getline(s,a,',')||!std::getline(s,b,',')||!std::getline(s,c,',')||!std::getline(s,d,','))return fail(e,"malformed response CSV row");try{r.frequencyHz.push_back(std::stod(a));r.magnitude.push_back(std::stod(b));r.gainDb.push_back(std::stod(c));r.phaseRadians.push_back(std::stod(d));}catch(...){return fail(e,"invalid response CSV number");}}
+    if(r.frequencyHz.size()<2)return fail(e,"incomplete response CSV");
+    std::vector<double> check;
+    if(!fractionalOctaveSmooth(r.frequencyHz,r.magnitude,0,check,e))return false;
+    return true;
+}
+
+bool writeSmoothedArtifacts(const std::string& dir,const ResponseCurve& raw,unsigned n,double ref,bool rawTrace,std::string* e) {
+    static std::mutex outputMutex;
+    std::lock_guard<std::mutex> outputLock(outputMutex);
+    if(!validResolution(n)||!std::isfinite(ref)||ref<=0)return fail(e,"invalid smoothing or reference frequency");
+    std::vector<double> sm;if(!fractionalOctaveSmooth(raw.frequencyHz,raw.magnitude,n,sm,e))return false;
+    const double refMag=interpLog(raw.frequencyHz,sm,std::clamp(ref,raw.frequencyHz.front(),raw.frequencyHz.back()));
+    {std::ofstream f(dir+"/frequency-response-smoothed.csv");if(!f)return fail(e,"cannot write smoothed CSV");f<<"frequency_hz,magnitude,gain_db,phase_rad\n";for(std::size_t i=0;i<sm.size();++i)f<<std::setprecision(12)<<raw.frequencyHz[i]<<','<<sm[i]<<','<<(sm[i]>0?20*std::log10(sm[i]):-300)<<','<<(i<raw.phaseRadians.size()?raw.phaseRadians[i]:0)<<'\n';}
+    const double f0=std::max(20.0,raw.frequencyHz.front()),f1=std::min(20000.0,raw.frequencyHz.back());if(f1<=f0)return fail(e,"measurement has no valid 20 Hz to 20 kHz bandwidth");
+    {std::ofstream f(dir+"/frequency-response.svg");if(!f)return fail(e,"cannot write response SVG");constexpr double left=86,right=1170,top=76,bottom=510;f<<"<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"1200\" height=\"620\" viewBox=\"0 0 1200 620\"><rect width=\"100%\" height=\"100%\" fill=\"#101010\"/><text x=\"600\" y=\"30\" fill=\"white\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"21\">Sweep frequency response — "<<smoothingName(n)<<" smoothing</text>";
+        auto X=[&](double hz){return left+(right-left)*std::log(hz/f0)/std::log(f1/f0);};auto Y=[](double db){return top+(30-db)*(bottom-top)/90.0;};
+        for(int db=-60;db<=30;db+=10){double y=Y(db);f<<"<path d=\"M"<<left<<' '<<y<<" H"<<right<<"\" stroke=\"#444\"/><text x=\"78\" y=\""<<y+5<<"\" fill=\"#ddd\" text-anchor=\"end\" font-size=\"13\">"<<db<<" dB</text>";}
+        f<<"<text x=\"20\" y=\"300\" fill=\"#ddd\" font-size=\"13\" text-anchor=\"middle\" transform=\"rotate(-90 20 300)\">Relative magnitude (dB re reference)</text>";
+        const char* labels[]={"20","25","31.5","40","50","63","80","100","125","160","200","250","315","400","500","630","800","1k","1.25k","1.6k","2k","2.5k","3.15k","4k","5k","6.3k","8k","10k","12.5k","16k","20k"};
+        for(int i=0;i<31;i++){double hz=20*std::pow(1000.0,i/10.0);if(hz<f0||hz>f1)continue;double x=X(hz);f<<"<path d=\"M"<<x<<' '<<top<<" V"<<bottom<<"\" stroke=\"#292929\"/><text x=\""<<x<<"\" y=\"548\" fill=\"#f2f2f2\" text-anchor=\"middle\" font-family=\"sans-serif\" font-size=\"12\" font-weight=\"600\">"<<labels[i]<<"</text>";}
+        f<<"<text x=\"628\" y=\"582\" fill=\"#eee\" text-anchor=\"middle\" font-size=\"14\">Frequency (Hz) — logarithmic scale</text>";
+        auto path=[&](const std::vector<double>& v,const char* color,double width,double opacity){f<<"<path d=\"";bool first=true;for(std::size_t i=0;i<v.size();++i){double hz=raw.frequencyHz[i];if(hz<f0||hz>f1||v[i]<=0)continue;double db=20*std::log10(v[i]/refMag);if(db<-60||db>30)db=std::clamp(db,-60.0,30.0);f<<(first?"M":" L")<<X(hz)<<' '<<Y(db);first=false;}f<<"\" fill=\"none\" stroke=\""<<color<<"\" stroke-width=\""<<width<<"\" opacity=\""<<opacity<<"\"/>";};
+        if(rawTrace)path(raw.magnitude,"#8b5555",1,0.55);
+        path(sm,"#ff3030",2.5,1);
+        f<<"<text x=\"880\" y=\"52\" fill=\"#ddd\" font-size=\"12\">Shape reference: "<<ref<<" Hz = "<<(refMag>0?20*std::log10(refMag):0)<<" dB absolute</text></svg>";}
+    const std::string meta=dir+"/measurement.json";std::ifstream mf(meta);std::string json;if(mf)json.assign(std::istreambuf_iterator<char>(mf),{});else json="{\n}\n";
+    const std::size_t close=json.find_last_of('}');if(close==std::string::npos)return fail(e,"invalid measurement metadata");json.erase(close);
+    const char* fields[]={"response_smoothing_octaves","smoothing_algorithm_version","smoothing_method","graph_reference_hz","graph_reference_level_db","graph_raw_trace"};
+    for(const char* field:fields){const std::string key=std::string("\"")+field+"\"";const auto at=json.find(key);if(at!=std::string::npos){const auto lineStart=json.rfind('\n',at);const auto lineEnd=json.find('\n',at);json.erase(lineStart==std::string::npos?0:lineStart+1,(lineEnd==std::string::npos?json.size():lineEnd+1)-(lineStart==std::string::npos?0:lineStart+1));}}
+    while(!json.empty()&&std::isspace(static_cast<unsigned char>(json.back())))json.pop_back();
+    if(!json.empty()&&json.back()==','){json.pop_back();while(!json.empty()&&std::isspace(static_cast<unsigned char>(json.back())))json.pop_back();}
+    if(json.size()>1&&json.back()!='{')json+=",\n";
+    json+="  \"response_smoothing_octaves\": "+(n?std::to_string(n):std::string("null"))+",\n  \"smoothing_algorithm_version\": 1,\n  \"smoothing_method\": \"log-frequency trapezoidal magnitude average\",\n  \"graph_reference_hz\": "+std::to_string(ref)+",\n  \"graph_reference_level_db\": "+std::to_string(refMag>0?20*std::log10(refMag):0)+",\n  \"graph_raw_trace\": "+(rawTrace?"true":"false")+"\n}\n";
+    std::ofstream out(meta);if(!out)return fail(e,"cannot update measurement metadata");out<<json;return static_cast<bool>(out)||fail(e,"cannot write measurement metadata");
+}
+
+bool reprocessSession(const std::string& dir,unsigned n,double ref,bool rawTrace,std::string* e) {
+    {std::ifstream metadata(dir+"/measurement.json");if(metadata){std::string json((std::istreambuf_iterator<char>(metadata)),{});const auto key=json.find("\"clipped_samples\"");if(key!=std::string::npos){const auto colon=json.find(':',key);if(colon!=std::string::npos){char* end=nullptr;const unsigned long long clipped=std::strtoull(json.c_str()+colon+1,&end,10);if(end!=json.c_str()+colon+1&&clipped>0)return fail(e,"clipped measurement cannot be smoothed or graphed as a valid response");}}}}
+    ResponseCurve raw;if(!readResponseCsv(dir+"/frequency-response.csv",raw,e))return false;
+    return writeSmoothedArtifacts(dir,raw,n,ref,rawTrace,e);
 }
 } // namespace trollfx::sweep

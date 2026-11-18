@@ -72,6 +72,13 @@ struct ClockAlignment {
     double secondConfidence = 0.0;
 };
 
+struct ResponseCurve {
+    std::vector<double> frequencyHz;
+    std::vector<double> magnitude;
+    std::vector<double> gainDb;
+    std::vector<double> phaseRadians;
+};
+
 bool validate(const SweepOptions& options, std::string* error = nullptr);
 bool resampleMono(const std::vector<double>& input, unsigned inputRate,
                   unsigned outputRate, std::vector<double>& output,
@@ -111,6 +118,34 @@ bool writeFloatWav(const std::string& path, const std::vector<double>& mono,
                    unsigned sampleRate, std::string* error = nullptr);
 bool writeArtifacts(const std::string& directory, const AnalysisResult& result,
                     unsigned sampleRate, double startHz, double stopHz,
-                    std::string* error = nullptr);
+                    std::string* error = nullptr,
+                    unsigned smoothingOctaveDenominator = 6);
+// Smoothing denominator is 0 for raw values, or 3, 6, 12, 24, or 48.
+// The average is magnitude-domain and uniform in log-frequency, with the
+// requested band clipped and renormalized at valid measurement edges.
+bool fractionalOctaveSmooth(const std::vector<double>& frequencyHz,
+                            const std::vector<double>& magnitude,
+                            unsigned octaveDenominator,
+                            std::vector<double>& smoothed,
+                            std::string* error = nullptr);
+bool readResponseCsv(const std::string& path, ResponseCurve& response,
+                     std::string* error = nullptr);
+bool writeSmoothedArtifacts(const std::string& directory,
+                            const ResponseCurve& raw,
+                            unsigned octaveDenominator,
+                            double referenceHz = 1000.0,
+                            bool includeRawTrace = true,
+                            std::string* error = nullptr);
+// Re-render an existing session from its unsmoothed frequency-response.csv.
+// Raw WAV/CSV/IR/phase data are read-only; only graph, smoothed CSV and
+// smoothing metadata are updated.
+bool reprocessSession(const std::string& directory,
+                      unsigned octaveDenominator,
+                      double referenceHz = 1000.0,
+                      bool includeRawTrace = true,
+                      std::string* error = nullptr);
+double responseDbAt(const std::vector<double>& frequencyHz,
+                    const std::vector<double>& magnitude,
+                    double queryHz);
 
 } // namespace trollfx::sweep

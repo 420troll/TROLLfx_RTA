@@ -37,7 +37,8 @@ enum : int {
     kSensitivity = 68, kBand16 = 69, kPeak16 = 85, kGain = 101, kFloor, kSmoothing, kAverage, kPeakEnable, kPeakReset,
     kAttack, kFall, kPeakHold, kPeakFall,
     kServiceMode, kServiceStart, kServiceStop, kServiceState,
-    kSweepStart, kSweepCancel, kSweepState, kSweepDuration, kSweepStartHz, kSweepStopHz, kSweepLevel, kParamCount
+    kSweepStart, kSweepCancel, kSweepState, kSweepDuration, kSweepStartHz, kSweepStopHz, kSweepLevel, kSweepSmoothing,
+    kSweepMeasurement, kSweepResponse0, kParamCount=kSweepResponse0+31
 };
 constexpr int kUid = MPC_FOURCC('T', 'f', 'R', 'A');
 enum ServiceState : int { SERVICE_STOPPED, SERVICE_STARTING, SERVICE_ONLINE, SERVICE_STOPPING, SERVICE_ERROR, SERVICE_EXTERNAL };
@@ -172,9 +173,14 @@ public:
         addParam(mpc::floatParam("sweep_start_hz","Sweep Start Hz",20.0f,1000.0f,20.0f,"Hz",0));
         addParam(mpc::floatParam("sweep_stop_hz","Sweep Stop Hz",1000.0f,20000.0f,20000.0f,"Hz",0));
         addParam(mpc::floatParam("sweep_level","Sweep Peak",-60.0f,-12.0f,-30.0f,"dBFS",0));
+        addParam(mpc::choiceParam("sweep_smoothing","Sweep Smoothing",{"None","1/48 octave","1/24 octave","1/12 octave","1/6 octave","1/3 octave"},4));
+        addParam(mpc::choiceParam("sweep_measurement","Saved Measurement",{"Latest","Previous 2","Previous 3","Previous 4","Previous 5","Previous 6","Previous 7","Previous 8"},0));
+        static const char* responseNames[31]={"R20","R25","R31","R40","R50","R63","R80","R100","R125","R160","R200","R250","R315","R400","R500","R630","R800","R1k","R1k2","R1k6","R2k","R2k5","R3k1","R4k","R5k","R6k3","R8k","R10k","R12k","R16k","R20k"};
+        for(int i=0;i<31;i++){auto p=mpc::floatParam((std::string("sweep_response_")+std::to_string(i)).c_str(),responseNames[i],0,24,0,"LED",0);p.automatable=false;addParam(p);}
         addProgram("RTA", defaults());
         SharedClient::instance().add(this);
         sweepThread_=std::thread(&TrollfxRta::sweepWorker,this);
+        reprocessRequested_.store(true,std::memory_order_release);sweepCv_.notify_one();
     }
     ~TrollfxRta() override { sweepShutdown_.store(true,std::memory_order_release);sweepCancel_.store(true,std::memory_order_release);sweepCv_.notify_all();if(sweepThread_.joinable())sweepThread_.join();SharedClient::instance().remove(this); }
 
@@ -227,6 +233,8 @@ public:
         if (index == kServiceStop && value >= 0.5f) { SharedClient::instance().command(2); set(kServiceStop,0.0f); }
         if (index == kSweepStart && value>=0.5f) { set(kSweepStart,0.0f);if(!sweepRunning_.load(std::memory_order_acquire))sweepStart_.store(true,std::memory_order_release);sweepCv_.notify_one(); }
         if (index == kSweepCancel && value>=0.5f) { set(kSweepCancel,0.0f);sweepCancel_.store(true,std::memory_order_release);sweepCv_.notify_one(); }
+        if (index == kSweepSmoothing) { reprocessRequested_.store(true,std::memory_order_release);sweepCv_.notify_one(); }
+        if (index == kSweepMeasurement) { reprocessRequested_.store(true,std::memory_order_release);sweepCv_.notify_one(); }
     }
     bool formatValue(int index, float v, std::string& out) override {
         if (index == kOrientation) { out = v < 0.5f ? "0 deg" : "90 deg"; return true; }
@@ -310,16 +318,28 @@ public:
         v[kSensitivity]=2.7673f; v[kGain]=11; v[kFloor]=-90; v[kSmoothing]=0; v[kAverage]=0; v[kPeakEnable]=1; v[kPeakReset]=0;
         v[kAttack]=50; v[kFall]=33; v[kPeakHold]=200; v[kPeakFall]=60;
         v[kServiceMode]=0; v[kServiceStart]=0; v[kServiceStop]=0; v[kServiceState]=SERVICE_STOPPED;
-        v[kSweepStart]=0;v[kSweepCancel]=0;v[kSweepState]=SWEEP_IDLE;v[kSweepDuration]=10;v[kSweepStartHz]=20;v[kSweepStopHz]=20000;v[kSweepLevel]=-30;
+        v[kSweepStart]=0;v[kSweepCancel]=0;v[kSweepState]=SWEEP_IDLE;v[kSweepDuration]=10;v[kSweepStartHz]=20;v[kSweepStopHz]=20000;v[kSweepLevel]=-30;v[kSweepSmoothing]=4;v[kSweepMeasurement]=0;
+        for(int i=0;i<31;i++)v[kSweepResponse0+i]=0;
         return v;
     }
 private:
     void publishSweepState(int state){set(kSweepState,static_cast<float>(state));requestDisplayUpdate();}
     static std::string sessionRoot(){Dl_info info{};if(!dladdr(reinterpret_cast<void*>(&servicePathAnchor),&info)||!info.dli_fname)return {};char path[4096];if(!realpath(info.dli_fname,path))return {};std::string p(path);auto slash=p.find_last_of('/');if(slash==std::string::npos)return {};p.resize(slash);return p+"/../Service/sessions";}
     void sweepWorker(){
-        auto sleep=[this](int ms){std::unique_lock<std::mutex> lock(sweepMutex_);sweepCv_.wait_for(lock,std::chrono::milliseconds(ms),[this]{return sweepShutdown_.load(std::memory_order_acquire)||sweepStart_.load(std::memory_order_acquire)||sweepCancel_.load(std::memory_order_acquire);});};
+        auto sleep=[this](int ms){std::unique_lock<std::mutex> lock(sweepMutex_);sweepCv_.wait_for(lock,std::chrono::milliseconds(ms),[this]{return sweepShutdown_.load(std::memory_order_acquire)||sweepStart_.load(std::memory_order_acquire)||sweepCancel_.load(std::memory_order_acquire)||reprocessRequested_.load(std::memory_order_acquire);});};
         while(!sweepShutdown_.load(std::memory_order_acquire)){
             if(sweepCancel_.exchange(false,std::memory_order_acq_rel)){sweepActive_.store(false,std::memory_order_release);std::string ignored;request("/api/sweep/cancel","POST",ignored);publishSweepState(SWEEP_CANCELLED);}
+            if(!sweepRunning_.load(std::memory_order_acquire)&&reprocessRequested_.exchange(false,std::memory_order_acq_rel)){
+                const auto root=sessionRoot();std::error_code ec;std::filesystem::path latest;
+                std::vector<std::filesystem::path> sessions;
+                if(!root.empty()&&std::filesystem::exists(root,ec))for(const auto& entry:std::filesystem::directory_iterator(root,ec))if(entry.is_directory()&&entry.path().filename().string().rfind("sweep-",0)==0&&std::filesystem::exists(entry.path()/"frequency-response.csv"))sessions.push_back(entry.path());
+                std::sort(sessions.begin(),sessions.end(),[](const auto& a,const auto& b){return a.filename().string()>b.filename().string();});
+                const int selected=mpc::clamp(static_cast<int>(std::lround(get(kSweepMeasurement))),0,7);if(static_cast<std::size_t>(selected)<sessions.size())latest=sessions[selected];
+                static const unsigned resolutions[]={0,48,24,12,6,3};const int choice=mpc::clamp(static_cast<int>(std::lround(get(kSweepSmoothing))),0,5);std::string error;
+                if(!latest.empty()&&trollfx::sweep::reprocessSession(latest.string(),resolutions[choice],1000.0,true,&error))updateSweepGraph(latest.string(),resolutions[choice]);
+                else for(int i=0;i<31;i++)set(kSweepResponse0+i,0.0f);
+                requestDisplayUpdate();
+            }
             if(!sweepStart_.exchange(false,std::memory_order_acq_rel)){sleep(50);continue;}
             if(sweepStateValue_!=SWEEP_IDLE&&sweepStateValue_!=SWEEP_READY&&sweepStateValue_!=SWEEP_CANCELLED&&sweepStateValue_!=SWEEP_ERROR){publishSweepState(SWEEP_ERROR);continue;}
             sweepRunning_.store(true,std::memory_order_release);auto failSweep=[this]{std::string ignored;request("/api/sweep/cancel","POST",ignored);sweepStateValue_=SWEEP_ERROR;publishSweepState(SWEEP_ERROR);sweepRunning_.store(false,std::memory_order_release);};auto cancelSweep=[this]{sweepStateValue_=SWEEP_CANCELLED;publishSweepState(SWEEP_CANCELLED);sweepRunning_.store(false,std::memory_order_release);};sweepStateValue_=SWEEP_STARTING;publishSweepState(SWEEP_STARTING);sweepCancel_.store(false,std::memory_order_release);
@@ -363,7 +383,9 @@ private:
             result.markerAlignmentValid=true;result.capturedFirstMarker=alignment.firstMarkerSample;result.capturedSecondMarker=alignment.secondMarkerSample;result.markerConfidence=std::min(alignment.firstConfidence,alignment.secondConfidence);
             const int orientation=get(kOrientation)>=0.5f?90:0;const std::string cal=root+"/../calibration/7033298"+(orientation==90?"_90deg":"")+".txt";trollfx::sweep::CalibrationCurve curve;
             if(!trollfx::sweep::readCalibration(cal,orientation,curve,&error)||!trollfx::sweep::applyCalibration(result,curve,&error)){failSweep();continue;}
-            if(!trollfx::sweep::writeArtifacts(folder,result,48000,options.startHz,options.stopHz,&error)){failSweep();continue;}
+            static const unsigned resolutions[]={0,48,24,12,6,3};const int smoothChoice=mpc::clamp(static_cast<int>(std::lround(get(kSweepSmoothing))),0,5);
+            if(!trollfx::sweep::writeArtifacts(folder,result,48000,options.startHz,options.stopHz,&error,resolutions[smoothChoice])){failSweep();continue;}
+            updateSweepGraph(folder,resolutions[smoothChoice]);
             std::filesystem::copy_file(cal,folder+"/calibration-used.txt",std::filesystem::copy_options::overwrite_existing,ec);
             sweepStateValue_=SWEEP_READY;publishSweepState(SWEEP_READY);sweepRunning_.store(false,std::memory_order_release);
         }
@@ -373,9 +395,16 @@ private:
         if (!std::isfinite(db)) return 0.0f;
         return mpc::clamp((db-floorDb)*24.0f/(-floorDb),0.0f,24.0f);
     }
+    void updateSweepGraph(const std::string& folder,unsigned resolution){
+        trollfx::sweep::ResponseCurve raw;std::string error;if(!trollfx::sweep::readResponseCsv(folder+"/frequency-response.csv",raw,&error))return;
+        std::vector<double> smooth;if(!trollfx::sweep::fractionalOctaveSmooth(raw.frequencyHz,raw.magnitude,resolution,smooth,&error))return;
+        const double ref=trollfx::sweep::responseDbAt(raw.frequencyHz,smooth,1000.0);if(!std::isfinite(ref))return;
+        static const double centers[31]={20,25,31.5,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000};
+        for(int i=0;i<31;i++){double db=trollfx::sweep::responseDbAt(raw.frequencyHz,smooth,centers[i])-ref;if(!std::isfinite(db))db=-30.0;set(kSweepResponse0+i,mpc::clamp(static_cast<float>((db+30.0)*24.0/36.0),0.0f,24.0f));}
+    }
     static mpc::PluginInfo makeInfo() {
         mpc::PluginInfo i; i.name="TROLLfx - VST - RTA"; i.vendor="TROLLfx"; i.uniqueId=kUid;
-        i.version=500; i.isInstrument=false; i.numInputs=2; i.numOutputs=2; i.tailSamples=1; return i;
+        i.version=501; i.isInstrument=false; i.numInputs=2; i.numOutputs=2; i.tailSamples=1; return i;
     }
     std::array<float,31> smoothState_{};
     std::array<float,31> meterState_{};
@@ -388,7 +417,7 @@ private:
     std::array<std::chrono::steady_clock::time_point,31> peakTime_{};
     std::array<std::chrono::steady_clock::time_point,16> peakTime16_{};
     std::chrono::steady_clock::time_point lastUpdate_{};
-    std::atomic<bool> sweepStart_{false},sweepCancel_{false},sweepShutdown_{false},sweepActive_{false},sweepAudioFinished_{false},sweepRunning_{false};
+    std::atomic<bool> sweepStart_{false},sweepCancel_{false},sweepShutdown_{false},sweepActive_{false},sweepAudioFinished_{false},sweepRunning_{false},reprocessRequested_{false};
     std::atomic<unsigned> hostSampleRate_{48000};
     std::atomic<unsigned> audioReaders_{0};
     std::atomic<const float*> sweepData_{nullptr};

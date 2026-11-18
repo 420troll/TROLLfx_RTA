@@ -12,7 +12,12 @@ static bool fieldSize(const std::string& json,const char* name,std::size_t& valu
 
 int main(int argc,char**argv) {
     using namespace trollfx::sweep;
-    if(argc==2&&std::string(argv[1])=="--version"){std::cout<<"TROLLfx Sweep Lab DSP 0.5.0\n";return 0;}
+    if(argc==2&&std::string(argv[1])=="--version"){std::cout<<"TROLLfx Sweep Lab DSP 0.5.1\n";return 0;}
+    if(argc>=3&&std::string(argv[1])=="reprocess") {
+        unsigned n=6;if(argc>=4){std::string s=argv[3];if(s=="none")n=0;else if(s.rfind("1/",0)==0)n=static_cast<unsigned>(std::strtoul(s.c_str()+2,nullptr,10));else{std::cerr<<"smoothing must be none, 1/48, 1/24, 1/12, 1/6, or 1/3\n";return 2;}}
+        double ref=argc>=5?std::strtod(argv[4],nullptr):1000.0;std::string error;
+        if(!reprocessSession(argv[2],n,ref,true,&error)){std::cerr<<error<<'\n';return 1;}return 0;
+    }
     if(argc>=2&&std::string(argv[1])=="generate") {
         if(argc!=9){std::cerr<<"usage: sweep-cli generate FILE FS SECONDS START_HZ STOP_HZ PEAK_DBFS FADE_SECONDS\n";return 2;}
         SweepOptions o; o.sampleRate=static_cast<unsigned>(std::strtoul(argv[3],nullptr,10));o.durationSeconds=std::strtod(argv[4],nullptr);o.startHz=std::strtod(argv[5],nullptr);o.stopHz=std::strtod(argv[6],nullptr);o.peakDbfs=std::strtod(argv[7],nullptr);o.fadeSeconds=std::strtod(argv[8],nullptr);
@@ -55,5 +60,5 @@ int main(int argc,char**argv) {
         if(autoAligned)std::cout<<"; estimated clock="<<alignment.clockPpm<<" ppm confidence="<<result.markerConfidence;
         std::cout<<"\n";return 0;
     }
-    std::cerr<<"TROLLfx Sweep Lab DSP 0.5.0\ncommands: generate, generate-test, analyze\n";return 2;
+    std::cerr<<"TROLLfx Sweep Lab DSP 0.5.1\ncommands: generate, generate-test, analyze, reprocess\n";return 2;
 }

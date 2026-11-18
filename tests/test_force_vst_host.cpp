@@ -40,7 +40,7 @@ int main(int argc,char**argv) {
         e->dispatcher(e,effSetBlockSize,0,128,nullptr,0);
         e->dispatcher(e,effMainsChanged,0,1,nullptr,0);
     }
-    if(a->numParams!=122){std::printf("FAIL appended V0.5 parameter count: %d\n",a->numParams);return 1;}
+    if(a->numParams!=155){std::printf("FAIL appended V0.5.1 parameter count: %d\n",a->numParams);return 1;}
     char parameterName[64]{};a->dispatcher(a,effGetParamName,110,0,parameterName,0.0f);
     if(std::strcmp(parameterName,"Peak Fall")!=0){std::printf("FAIL V0.3 parameter ordering changed at 110: %s\n",parameterName);return 1;}
     a->dispatcher(a,effGetParamName,111,0,parameterName,0.0f);
@@ -49,6 +49,9 @@ int main(int argc,char**argv) {
     if(std::strcmp(parameterName,"Service Status")!=0){std::printf("FAIL V0.4 parameter 114 moved: %s\n",parameterName);return 1;}
     a->dispatcher(a,effGetParamName,115,0,parameterName,0.0f);
     if(std::strcmp(parameterName,"SWEEP START")!=0||a->getParameter(a,115)!=0.0f||a->getParameter(a,116)!=0.0f||a->getParameter(a,117)!=0.0f){std::printf("FAIL V0.5 sweep controls/defaults: %s\n",parameterName);return 1;}
+    a->dispatcher(a,effGetParamName,122,0,parameterName,0.0f);
+    if(std::strcmp(parameterName,"Sweep Smoothing")!=0||std::fabs(a->getParameter(a,122)-4.0f/5.0f)>0.01f){std::printf("FAIL V0.5.1 appended smoothing selector/default: %s %.3f\n",parameterName,a->getParameter(a,122));return 1;}
+    a->dispatcher(a,effGetParamName,123,0,parameterName,0.0f);if(std::strcmp(parameterName,"Saved Measurement")!=0||a->getParameter(a,123)!=0.0f){std::printf("FAIL V0.5.1 saved measurement selector/default: %s\n",parameterName);return 1;}
     if(argc>=3) {
         const char* mode=argv[2];
         auto display=[&](AEffect* e,int index){char out[64]{};e->dispatcher(e,effGetParamDisplay,index,0,out,0.0f);return std::string(out);};
@@ -72,6 +75,11 @@ int main(int argc,char**argv) {
             for(int i=0;i<128;i++){il[i]=0.013f;ir[i]=-0.021f;ol[i]=orr[i]=0;}
             float* in[]={il,ir};float* out[]={ol,orr};a->processReplacing(a,in,out,128);
             for(int i=0;i<128;i++)if(ol[i]!=il[i]||orr[i]!=ir[i]){std::puts("FAIL normal pass-through did not resume after sweep error");return 1;}
+            a->setParameter(a,122,0.0f); // No Smoothing re-renders the saved result only.
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            a->setParameter(a,123,1.0f/7.0f); // Previous 2 selects the older saved measurement.
+            if(std::fabs(a->getParameter(a,123)-1.0f/7.0f)>0.01f){std::printf("FAIL saved-measurement selector value %.4f\n",a->getParameter(a,123));return 1;}
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
             for(AEffect* e:{a,b}){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);}dlclose(lib);
             std::printf("PASS explicit sweep emits safe identical stereo signal, then returns to pass-through (%zu sweep frames)\n",sweepFrames);return 0;
         }
