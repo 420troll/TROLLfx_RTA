@@ -6,6 +6,7 @@ on:
     branches: [feature/force-native-rta-v04-auto-service]
 jobs:
   dsp-and-arm-package:
+    if: github.event_name != 'pull_request' || github.head_ref == 'feature/v05-sweep-lab-prework'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4

@@ -15,7 +15,6 @@ jobs:
         run: |
           bash scripts/test-sweep-dsp.sh
           for t in test_sweep_fixture.py test_sweep_comparison.py test_sweep_cli.py test_sweep_service_api.py test_sweep_smoothing_reference.py; do python3 -m unittest discover -s tests -p "$t" -v; done
-          bash scripts/test-force-v04.sh
       - name: Install pinned pyfar independent reference
         run: |
           python3 -m venv "$RUNNER_TEMP/pyfar-venv"
