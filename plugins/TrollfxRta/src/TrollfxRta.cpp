@@ -1,5 +1,6 @@
 #include "mpc_plugin.h"
 #include "spectrum_json.h"
+#include "../../../src/sweep/sweep_dsp.hpp"
 
 #include <array>
 #include <algorithm>
@@ -17,6 +18,8 @@
 #include <vector>
 #include <cstdlib>
 #include <dlfcn.h>
+#include <filesystem>
+#include <fstream>
 #include <signal.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
@@ -33,10 +36,12 @@ enum : int {
     kBand = 0, kPeak = 31, kRaw = 62, kLz, kLa, kOrientation, kMic, kCalibration,
     kSensitivity = 68, kBand16 = 69, kPeak16 = 85, kGain = 101, kFloor, kSmoothing, kAverage, kPeakEnable, kPeakReset,
     kAttack, kFall, kPeakHold, kPeakFall,
-    kServiceMode, kServiceStart, kServiceStop, kServiceState, kParamCount
+    kServiceMode, kServiceStart, kServiceStop, kServiceState,
+    kSweepStart, kSweepCancel, kSweepState, kSweepDuration, kSweepStartHz, kSweepStopHz, kSweepLevel, kParamCount
 };
 constexpr int kUid = MPC_FOURCC('T', 'f', 'R', 'A');
 enum ServiceState : int { SERVICE_STOPPED, SERVICE_STARTING, SERVICE_ONLINE, SERVICE_STOPPING, SERVICE_ERROR, SERVICE_EXTERNAL };
+enum SweepUiState : int { SWEEP_IDLE, SWEEP_STARTING, SWEEP_ARMED, SWEEP_CAPTURING, SWEEP_PROCESSING, SWEEP_READY, SWEEP_CANCELLED, SWEEP_ERROR };
 static void servicePathAnchor() {}
 
 bool writeAll(int fd, const char* p, size_t n) {
@@ -48,10 +53,10 @@ bool writeAll(int fd, const char* p, size_t n) {
     return true;
 }
 
-bool request(const char* path, const char* method, std::string& body) {
+bool request(const char* path, const char* method, std::string& body, size_t maxBody = 32768, int timeoutMs = 400) {
     const int fd = ::socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) return false;
-    timeval tv{0, 160000};
+    timeval tv{static_cast<time_t>(timeoutMs/1000),static_cast<suseconds_t>((timeoutMs%1000)*1000)};
     setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
     setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
     const int flags = fcntl(fd, F_GETFL, 0);
@@ -72,15 +77,16 @@ bool request(const char* path, const char* method, std::string& body) {
     char header[256];
     const int n = std::snprintf(header, sizeof(header), "%s %s HTTP/1.0\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n", method, path);
     if (n <= 0 || !writeAll(fd, header, static_cast<size_t>(n))) { close(fd); return false; }
-    char buf[2048]; std::string response; response.reserve(8192);
-    const auto deadline=std::chrono::steady_clock::now()+std::chrono::milliseconds(400);
-    while (response.size() < 32768) {
+    char buf[16384]; std::string response; response.reserve(std::min<size_t>(maxBody+1024,32768));
+    const auto deadline=std::chrono::steady_clock::now()+std::chrono::milliseconds(timeoutMs);
+    const size_t maxResponse=maxBody+1024;
+    while (response.size() < maxResponse) {
         const auto remaining=std::chrono::duration_cast<std::chrono::microseconds>(deadline-std::chrono::steady_clock::now()).count();
         if (remaining<=0) break;
         fd_set readable; FD_ZERO(&readable); FD_SET(fd,&readable);
         timeval wait{static_cast<time_t>(remaining/1000000),static_cast<suseconds_t>(remaining%1000000)};
         if (select(fd+1,&readable,nullptr,nullptr,&wait)<=0) break;
-        const size_t room=32768-response.size();
+        const size_t room=maxResponse-response.size();
         const ssize_t got = ::recv(fd, buf, std::min(sizeof(buf),room), 0);
         if (got <= 0) break;
         response.append(buf, static_cast<size_t>(got));
@@ -159,17 +165,59 @@ public:
         auto start=mpc::boolParam("analyzer_start", "Analyzer START", false); start.automatable=false; addParam(start);
         auto stop=mpc::boolParam("analyzer_stop", "Analyzer STOP", false); stop.automatable=false; addParam(stop);
         auto state=mpc::choiceParam("service_status", "Service Status", {"STOPPED", "STARTING", "ONLINE", "STOPPING", "ERROR", "EXTERNAL"}, 0); state.automatable=false; addParam(state);
+        auto sweepStart=mpc::boolParam("sweep_start", "SWEEP START", false);sweepStart.automatable=false;addParam(sweepStart);
+        auto sweepCancel=mpc::boolParam("sweep_cancel", "SWEEP CANCEL", false);sweepCancel.automatable=false;addParam(sweepCancel);
+        auto sweepState=mpc::choiceParam("sweep_status","Sweep Status",{"IDLE","STARTING","ARMED","CAPTURING","PROCESSING","READY","CANCELLED","ERROR"},0);sweepState.automatable=false;addParam(sweepState);
+        addParam(mpc::floatParam("sweep_duration","Sweep Duration",0.5f,20.0f,10.0f,"s",1));
+        addParam(mpc::floatParam("sweep_start_hz","Sweep Start Hz",20.0f,1000.0f,20.0f,"Hz",0));
+        addParam(mpc::floatParam("sweep_stop_hz","Sweep Stop Hz",1000.0f,20000.0f,20000.0f,"Hz",0));
+        addParam(mpc::floatParam("sweep_level","Sweep Peak",-60.0f,-12.0f,-30.0f,"dBFS",0));
         addProgram("RTA", defaults());
         SharedClient::instance().add(this);
+        sweepThread_=std::thread(&TrollfxRta::sweepWorker,this);
     }
-    ~TrollfxRta() override { SharedClient::instance().remove(this); }
+    ~TrollfxRta() override { sweepShutdown_.store(true,std::memory_order_release);sweepCancel_.store(true,std::memory_order_release);sweepCv_.notify_all();if(sweepThread_.joinable())sweepThread_.join();SharedClient::instance().remove(this); }
+
+    void prepare(double sampleRate, int) override {
+        if (std::isfinite(sampleRate) && sampleRate >= 32000.0 && sampleRate <= 96000.0)
+            hostSampleRate_.store(static_cast<unsigned>(std::lround(sampleRate)),std::memory_order_release);
+    }
 
     void process(mpc::ProcessContext& ctx) override {
         const int channels = mpc::clamp(ctx.numOutputs, 0, 2);
+        audioReaders_.fetch_add(1,std::memory_order_acquire);
+        const bool playing=sweepActive_.load(std::memory_order_acquire);
+        const float* sweep=playing?sweepData_.load(std::memory_order_acquire):nullptr;
+        const size_t sweepSize=playing?sweepSize_.load(std::memory_order_acquire):0;
+        if(playing&&sweep&&sweepSize){
+            size_t index=sweepIndex_;
+            for(int frame=0;frame<ctx.numFrames;frame++){
+                if(sweepCancel_.load(std::memory_order_acquire)){
+                    sweepActive_.store(false,std::memory_order_release);sweepAudioFinished_.store(true,std::memory_order_release);
+                    const float last=index?sweep[index-1]:0.0f;constexpr int fadeFrames=480;
+                    for(int rest=frame;rest<ctx.numFrames;rest++)for(int ch=0;ch<channels;ch++)if(ctx.outputs&&ctx.outputs[ch]){
+                        if(rest-frame<fadeFrames)ctx.outputs[ch][rest]=last*(1.0f-static_cast<float>(rest-frame+1)/fadeFrames);
+                        else if(ctx.inputs&&ch<ctx.numInputs&&ctx.inputs[ch])ctx.outputs[ch][rest]=ctx.inputs[ch][rest];
+                        else ctx.outputs[ch][rest]=0.0f;
+                    }
+                    break;
+                }
+                if(index>=sweepSize){
+                    sweepActive_.store(false,std::memory_order_release);sweepAudioFinished_.store(true,std::memory_order_release);
+                    for(int rest=frame;rest<ctx.numFrames;rest++)for(int ch=0;ch<channels;ch++)if(ctx.outputs&&ctx.outputs[ch]&&ctx.inputs&&ch<ctx.numInputs&&ctx.inputs[ch])ctx.outputs[ch][rest]=ctx.inputs[ch][rest];
+                    break;
+                }
+                const float value=sweep[index++];for(int ch=0;ch<channels;ch++)if(ctx.outputs&&ctx.outputs[ch])ctx.outputs[ch][frame]=value;
+                if(index>=sweepSize){sweepActive_.store(false,std::memory_order_release);sweepAudioFinished_.store(true,std::memory_order_release);for(int rest=frame+1;rest<ctx.numFrames;rest++)for(int ch=0;ch<channels;ch++)if(ctx.outputs&&ctx.outputs[ch]&&ctx.inputs&&ch<ctx.numInputs&&ctx.inputs[ch])ctx.outputs[ch][rest]=ctx.inputs[ch][rest];break;}
+            }
+            sweepIndex_=index;
+            audioReaders_.fetch_sub(1,std::memory_order_release);return;
+        }
         for (int ch=0; ch<channels; ++ch) {
             if (!ctx.outputs || !ctx.outputs[ch] || !ctx.inputs || ch >= ctx.numInputs || !ctx.inputs[ch] || ctx.outputs[ch] == ctx.inputs[ch]) continue;
             std::memcpy(ctx.outputs[ch], ctx.inputs[ch], static_cast<size_t>(ctx.numFrames) * sizeof(float));
         }
+        audioReaders_.fetch_sub(1,std::memory_order_release);
     }
     void parameterChanged(int index, float value) override {
         if (index == kPeakReset && value >= 0.5f) SharedClient::instance().queueReset();
@@ -177,6 +225,8 @@ public:
         if (index == kServiceMode) SharedClient::instance().queueServiceMode(static_cast<int>(std::lround(value)));
         if (index == kServiceStart && value >= 0.5f) { SharedClient::instance().command(1); set(kServiceStart,0.0f); }
         if (index == kServiceStop && value >= 0.5f) { SharedClient::instance().command(2); set(kServiceStop,0.0f); }
+        if (index == kSweepStart && value>=0.5f) { set(kSweepStart,0.0f);if(!sweepRunning_.load(std::memory_order_acquire))sweepStart_.store(true,std::memory_order_release);sweepCv_.notify_one(); }
+        if (index == kSweepCancel && value>=0.5f) { set(kSweepCancel,0.0f);sweepCancel_.store(true,std::memory_order_release);sweepCv_.notify_one(); }
     }
     bool formatValue(int index, float v, std::string& out) override {
         if (index == kOrientation) { out = v < 0.5f ? "0 deg" : "90 deg"; return true; }
@@ -186,6 +236,7 @@ public:
         }
         if (index == kMic) { out = v >= 0.5f ? "ONLINE" : "OFFLINE"; return true; }
         if (index == kServiceState) { static const char* names[]={"STOPPED","STARTING","ONLINE","STOPPING","ERROR","EXTERNAL"}; int n=mpc::clamp(static_cast<int>(v),0,5); out=names[n]; return true; }
+        if (index == kSweepState) { static const char* names[]={"IDLE","STARTING","ARMED","CAPTURING","PROCESSING","READY","CANCELLED","ERROR"};int n=mpc::clamp(static_cast<int>(v),0,7);out=names[n];return true; }
         return false;
     }
     void update(const trollfx::Snapshot& s) {
@@ -259,16 +310,72 @@ public:
         v[kSensitivity]=2.7673f; v[kGain]=11; v[kFloor]=-90; v[kSmoothing]=0; v[kAverage]=0; v[kPeakEnable]=1; v[kPeakReset]=0;
         v[kAttack]=50; v[kFall]=33; v[kPeakHold]=200; v[kPeakFall]=60;
         v[kServiceMode]=0; v[kServiceStart]=0; v[kServiceStop]=0; v[kServiceState]=SERVICE_STOPPED;
+        v[kSweepStart]=0;v[kSweepCancel]=0;v[kSweepState]=SWEEP_IDLE;v[kSweepDuration]=10;v[kSweepStartHz]=20;v[kSweepStopHz]=20000;v[kSweepLevel]=-30;
         return v;
     }
 private:
+    void publishSweepState(int state){set(kSweepState,static_cast<float>(state));requestDisplayUpdate();}
+    static std::string sessionRoot(){Dl_info info{};if(!dladdr(reinterpret_cast<void*>(&servicePathAnchor),&info)||!info.dli_fname)return {};char path[4096];if(!realpath(info.dli_fname,path))return {};std::string p(path);auto slash=p.find_last_of('/');if(slash==std::string::npos)return {};p.resize(slash);return p+"/../Service/sessions";}
+    void sweepWorker(){
+        auto sleep=[this](int ms){std::unique_lock<std::mutex> lock(sweepMutex_);sweepCv_.wait_for(lock,std::chrono::milliseconds(ms),[this]{return sweepShutdown_.load(std::memory_order_acquire)||sweepStart_.load(std::memory_order_acquire)||sweepCancel_.load(std::memory_order_acquire);});};
+        while(!sweepShutdown_.load(std::memory_order_acquire)){
+            if(sweepCancel_.exchange(false,std::memory_order_acq_rel)){sweepActive_.store(false,std::memory_order_release);std::string ignored;request("/api/sweep/cancel","POST",ignored);publishSweepState(SWEEP_CANCELLED);}
+            if(!sweepStart_.exchange(false,std::memory_order_acq_rel)){sleep(50);continue;}
+            if(sweepStateValue_!=SWEEP_IDLE&&sweepStateValue_!=SWEEP_READY&&sweepStateValue_!=SWEEP_CANCELLED&&sweepStateValue_!=SWEEP_ERROR){publishSweepState(SWEEP_ERROR);continue;}
+            sweepRunning_.store(true,std::memory_order_release);auto failSweep=[this]{std::string ignored;request("/api/sweep/cancel","POST",ignored);sweepStateValue_=SWEEP_ERROR;publishSweepState(SWEEP_ERROR);sweepRunning_.store(false,std::memory_order_release);};auto cancelSweep=[this]{sweepStateValue_=SWEEP_CANCELLED;publishSweepState(SWEEP_CANCELLED);sweepRunning_.store(false,std::memory_order_release);};sweepStateValue_=SWEEP_STARTING;publishSweepState(SWEEP_STARTING);sweepCancel_.store(false,std::memory_order_release);
+            const unsigned hostRate=hostSampleRate_.load(std::memory_order_acquire);
+            trollfx::sweep::SweepOptions options;options.sampleRate=hostRate;options.durationSeconds=get(kSweepDuration);options.startHz=get(kSweepStartHz);options.stopHz=std::min<double>(get(kSweepStopHz),std::nextafter(0.45*hostRate,0.0));options.peakDbfs=get(kSweepLevel);options.fadeSeconds=0.01;
+            std::string error;auto signal=trollfx::sweep::generateMeasurementSignal(options);if(signal.samples.empty()){failSweep();continue;}
+            std::vector<float> playback(signal.samples.size());for(std::size_t i=0;i<playback.size();i++)playback[i]=static_cast<float>(signal.samples[i]);
+            std::vector<double> reference48;if(!trollfx::sweep::resampleMono(signal.samples,hostRate,48000,reference48,&error)){failSweep();continue;}
+            const auto root=sessionRoot();if(root.empty()){failSweep();continue;}
+            bool api=false;auto apiDeadline=std::chrono::steady_clock::now()+std::chrono::seconds(12);
+            while(!sweepShutdown_.load()&&!sweepCancel_.load()&&std::chrono::steady_clock::now()<apiDeadline){std::string probe;trollfx::Snapshot snapshot;if(request("/api/spectrum","GET",probe)&&trollfx::parseSpectrumJson(probe,snapshot)&&snapshot.ok){api=true;break;}std::this_thread::sleep_for(std::chrono::milliseconds(100));}
+            if(!api||sweepShutdown_.load()||sweepCancel_.load()){if(sweepCancel_.load())cancelSweep();else failSweep();continue;}
+            char path[96];const unsigned captureSeconds=static_cast<unsigned>(std::ceil(reference48.size()/48000.0+1.0));std::snprintf(path,sizeof(path),"/api/sweep/arm?seconds=%u",captureSeconds);std::string body;
+            if(!request(path,"POST",body)||body.find("\"ok\":true")==std::string::npos){failSweep();continue;}
+            publishSweepState(SWEEP_ARMED);sweepStateValue_=SWEEP_ARMED;
+            bool armed=false;auto armDeadline=std::chrono::steady_clock::now()+std::chrono::seconds(3);
+            while(!sweepShutdown_.load()&&!sweepCancel_.load()&&std::chrono::steady_clock::now()<armDeadline){if(request("/api/sweep/status","GET",body)&&body.find("\"state\":\"CAPTURING\"")!=std::string::npos){armed=true;break;}std::this_thread::sleep_for(std::chrono::milliseconds(20));}
+            if(!armed||sweepShutdown_.load()||sweepCancel_.load()){std::string ignored;request("/api/sweep/cancel","POST",ignored);if(sweepCancel_.load())cancelSweep();else failSweep();continue;}
+            while(audioReaders_.load(std::memory_order_acquire))std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            sweepBuffer_=std::move(playback);sweepIndex_=0;sweepAudioFinished_.store(false,std::memory_order_release);sweepData_.store(sweepBuffer_.data(),std::memory_order_release);sweepSize_.store(sweepBuffer_.size(),std::memory_order_release);sweepCancel_.store(false,std::memory_order_release);sweepActive_.store(true,std::memory_order_release);publishSweepState(SWEEP_CAPTURING);sweepStateValue_=SWEEP_CAPTURING;
+            const auto playbackDeadline=std::chrono::steady_clock::now()+std::chrono::duration<double>(signal.samples.size()/48000.0+8.0);
+            while(!sweepShutdown_.load()&&!sweepCancel_.load()&&!sweepAudioFinished_.load(std::memory_order_acquire)&&std::chrono::steady_clock::now()<playbackDeadline)std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            if(sweepCancel_.load()||sweepShutdown_.load()||!sweepAudioFinished_.load()){sweepActive_.store(false,std::memory_order_release);std::string ignored;request("/api/sweep/cancel","POST",ignored);if(sweepCancel_.load())cancelSweep();else failSweep();continue;}
+            publishSweepState(SWEEP_PROCESSING);sweepStateValue_=SWEEP_PROCESSING;
+            if(!request("/api/sweep/finish","POST",body,32768,3000)||body.find("\"state\":\"READY\"")==std::string::npos){failSweep();continue;}
+            if(!request("/api/sweep/capture.wav","GET",body,8*1024*1024,20000)||body.size()<44){failSweep();continue;}
+            std::error_code ec;std::filesystem::create_directories(root,ec);if(ec){failSweep();continue;}
+            const auto stamp=std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();const std::string folder=root+"/sweep-"+std::to_string(stamp);std::filesystem::create_directories(folder,ec);if(ec){failSweep();continue;}
+            {std::ofstream f(folder+"/capture.wav",std::ios::binary);f.write(body.data(),static_cast<std::streamsize>(body.size()));if(!f){failSweep();continue;}}
+            if(!trollfx::sweep::writeFloatWav(folder+"/reference.wav",reference48,48000,&error)){failSweep();continue;}
+            std::vector<double> capture;unsigned captureFs=0;if(!trollfx::sweep::readWav(folder+"/capture.wav",capture,captureFs,&error)||captureFs!=48000){failSweep();continue;}
+            const std::size_t markerStart48=static_cast<std::size_t>(std::llround(signal.markerStartSample*48000.0/hostRate));
+            const std::size_t markerEnd48=static_cast<std::size_t>(std::llround(signal.markerEndSample*48000.0/hostRate));
+            if(markerStart48>=reference48.size()||markerEnd48>reference48.size()||markerEnd48<=markerStart48){failSweep();continue;}
+            const std::size_t markerLength48=(signal.marker.size()*48000u+hostRate/2)/hostRate;
+            if(markerLength48<2||markerStart48+markerLength48>reference48.size()){failSweep();continue;}
+            std::vector<double> marker48(reference48.begin()+markerStart48,reference48.begin()+markerStart48+markerLength48);
+            trollfx::sweep::ClockAlignment alignment;if(!trollfx::sweep::locateClockMarkers(marker48,capture,markerEnd48-markerStart48,alignment,&error)){failSweep();continue;}
+            options.sampleRate=48000;trollfx::sweep::AnalysisOptions analysis;analysis.sampleRate=48000;analysis.startHz=options.startHz;analysis.stopHz=options.stopHz;analysis.clockPpm=alignment.clockPpm;
+            trollfx::sweep::AnalysisResult result;if(!trollfx::sweep::analyze(reference48,capture,analysis,result,&error)){failSweep();continue;}
+            result.markerAlignmentValid=true;result.capturedFirstMarker=alignment.firstMarkerSample;result.capturedSecondMarker=alignment.secondMarkerSample;result.markerConfidence=std::min(alignment.firstConfidence,alignment.secondConfidence);
+            const int orientation=get(kOrientation)>=0.5f?90:0;const std::string cal=root+"/../calibration/7033298"+(orientation==90?"_90deg":"")+".txt";trollfx::sweep::CalibrationCurve curve;
+            if(!trollfx::sweep::readCalibration(cal,orientation,curve,&error)||!trollfx::sweep::applyCalibration(result,curve,&error)){failSweep();continue;}
+            if(!trollfx::sweep::writeArtifacts(folder,result,48000,options.startHz,options.stopHz,&error)){failSweep();continue;}
+            std::filesystem::copy_file(cal,folder+"/calibration-used.txt",std::filesystem::copy_options::overwrite_existing,ec);
+            sweepStateValue_=SWEEP_READY;publishSweepState(SWEEP_READY);sweepRunning_.store(false,std::memory_order_release);
+        }
+        sweepActive_.store(false,std::memory_order_release);sweepRunning_.store(false,std::memory_order_release);
+    }
     static float ledValue(float db, float floorDb) {
         if (!std::isfinite(db)) return 0.0f;
         return mpc::clamp((db-floorDb)*24.0f/(-floorDb),0.0f,24.0f);
     }
     static mpc::PluginInfo makeInfo() {
         mpc::PluginInfo i; i.name="TROLLfx - VST - RTA"; i.vendor="TROLLfx"; i.uniqueId=kUid;
-        i.version=400; i.isInstrument=false; i.numInputs=2; i.numOutputs=2; i.tailSamples=1; return i;
+        i.version=500; i.isInstrument=false; i.numInputs=2; i.numOutputs=2; i.tailSamples=1; return i;
     }
     std::array<float,31> smoothState_{};
     std::array<float,31> meterState_{};
@@ -281,6 +388,17 @@ private:
     std::array<std::chrono::steady_clock::time_point,31> peakTime_{};
     std::array<std::chrono::steady_clock::time_point,16> peakTime16_{};
     std::chrono::steady_clock::time_point lastUpdate_{};
+    std::atomic<bool> sweepStart_{false},sweepCancel_{false},sweepShutdown_{false},sweepActive_{false},sweepAudioFinished_{false},sweepRunning_{false};
+    std::atomic<unsigned> hostSampleRate_{48000};
+    std::atomic<unsigned> audioReaders_{0};
+    std::atomic<const float*> sweepData_{nullptr};
+    std::atomic<size_t> sweepSize_{0};
+    std::vector<float> sweepBuffer_;
+    size_t sweepIndex_=0;
+    int sweepStateValue_=SWEEP_IDLE;
+    std::mutex sweepMutex_;
+    std::condition_variable sweepCv_;
+    std::thread sweepThread_;
 };
 
 void SharedClient::add(TrollfxRta* p) {
