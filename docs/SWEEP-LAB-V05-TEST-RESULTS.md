@@ -27,6 +27,10 @@
   checks. ARM32 VST is hard-float, exports `VSTPluginMain`, and needs glibc no
   newer than 2.30. ARMv7 analyzer and DSP CLI are hard-float and the CLI depends
   only on libc/libm (no libstdc++ runtime).
+- Dedicated native VST host harness passes pass-through, saved-state compatibility,
+  lifecycle and completed-sweep tests. The SDK's generic host simulator
+  round-trip is not used as a gate because it requires the read-only runtime
+  Service Status to remain constant while the asynchronous worker updates it.
 - Controlled install simulation validates a V0.4 target, stages V0.5, preserves
   V0.4, then restores V0.4 with the rollback script. No device was installed.
 - Package `SHA256SUMS` and archive checksum pass.
@@ -36,9 +40,8 @@
 One V0.2 live FFT benchmark run measured 0.456 ms/frame for V0.1.2 and 0.659
 ms/frame for the 32768-point V0.2 engine (1.45× host CPU/frame, 4× FFT samples).
 One 10-second 48 kHz offline analysis measured 1.79 s and 74,160 KiB peak RSS
-on an Intel Core i7-10750H host. Host VST pass-through averaged 0.01% of a
-128-frame block in the SDK simulator. These are development-machine
-measurements; none predicts Force CPU headroom.
+on an Intel Core i7-10750H host. These are development-machine measurements;
+neither predicts Force CPU headroom.
 
 ## Not verified by these tests
 

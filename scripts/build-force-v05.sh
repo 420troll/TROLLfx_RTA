@@ -10,7 +10,6 @@ python3 "$repo_dir/scripts/generate-force-rta-skin.py"
 python3 "$MPC_SDK_DIR/tools/build.py" "$repo_dir/plugins/TrollfxRta" --target all --zig "$SDK_ZIG_PYTHON"
 plugin="$repo_dir/plugins/TrollfxRta/build/TROLLfx - VST - TROLLfx - VST - RTA"
 python3 "$MPC_SDK_DIR/tools/validate.py" "$plugin" --strict
-"$MPC_SDK_DIR/.sdk-tools/host_sim" "$repo_dir/plugins/TrollfxRta/build/native/trollfx---vst---rta.so" test --seconds 1
 bash "$repo_dir/scripts/test-force-v04.sh" "$repo_dir/plugins/TrollfxRta/build/native/trollfx---vst---rta.so"
 test_root="$(mktemp -d "${TMPDIR:-/tmp}/trollfx-rta-v05-vst.XXXXXX")"
 trap 'rm -rf -- "$test_root"' EXIT
