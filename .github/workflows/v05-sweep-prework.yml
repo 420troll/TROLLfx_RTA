@@ -1,0 +1,23 @@
+name: V0.5 Sweep Lab prework
+on:
+  push:
+    branches: [feature/v05-sweep-lab-prework]
+  pull_request:
+    paths:
+      - 'scripts/make-sweep-fixture.py'
+      - 'tests/test_sweep_fixture.py'
+      - '.github/workflows/v05-sweep-prework.yml'
+jobs:
+  synthetic-fixture:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate deterministic sweep fixture
+        run: python3 -m unittest discover -s tests -p test_sweep_fixture.py -v
+      - name: Generate reference and synthetic recording
+        run: python3 scripts/make-sweep-fixture.py --output build/sweep-fixture
+      - name: Preserve synthetic fixtures for offline DSP tests
+        uses: actions/upload-artifact@v4
+        with:
+          name: v05-synthetic-two-tap-reference
+          path: build/sweep-fixture/
