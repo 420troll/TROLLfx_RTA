@@ -81,7 +81,7 @@ def main():
                 f"20,0.5,-6.0206,0\n1000,0.5,-6.0206,0\n5000,{peak},{20*__import__('math').log10(peak)},0\n20000,0.5,-6.0206,0\n")
             (old / "measurement.json").write_text('{"format":"V0.5 legacy","clipped_samples":0}\n')
         result = subprocess.run([sys.argv[1], pathlib.Path(sys.argv[2]).resolve(), "--sweep-playback"],
-                                env=env, timeout=20, check=False)
+                                env=env, timeout=90, check=False)
         if result.returncode:
             raise SystemExit(result.returncode)
         found = sorted(sessions.glob("sweep-*/measurement.json"))

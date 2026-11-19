@@ -42,7 +42,12 @@ enum : int {
     kSweepMeasurement, kSweepResponse0, kSweepSmoothDb0=kSweepResponse0+31,
     kSweepRawDb0=kSweepSmoothDb0+31, kSweepResultStatus=kSweepRawDb0+31,
     kSweepGraphPeak0=kSweepResultStatus+1, kSweepDiagnostic=kSweepGraphPeak0+31,
-    kParamCount=kSweepDiagnostic+1
+    kSweepDisplayRange=kSweepDiagnostic+1, kSweepDisplayCenter, kSweepDisplayMinimum,
+    kSweepDisplayMaximum, kSweepGraphTick0, kSweepGraphTickCount=5,
+    kSweepGraphSegment0=kSweepGraphTick0+kSweepGraphTickCount, kSweepGraphSegmentCount=255,
+    kSweepClipState0=kSweepGraphSegment0+kSweepGraphSegmentCount,
+    kSweepActualSmoothDb0=kSweepClipState0+31, kSweepActualRawDb0=kSweepActualSmoothDb0+31,
+    kParamCount=kSweepActualRawDb0+31
 };
 constexpr int kUid = MPC_FOURCC('T', 'f', 'R', 'A');
 enum ServiceState : int { SERVICE_STOPPED, SERVICE_STARTING, SERVICE_ONLINE, SERVICE_STOPPING, SERVICE_ERROR, SERVICE_EXTERNAL };
@@ -190,6 +195,25 @@ public:
         static const char* graphPeakNames[31]={"GP20","GP25","GP31","GP40","GP50","GP63","GP80","GP100","GP125","GP160","GP200","GP250","GP315","GP400","GP500","GP630","GP800","GP1k","GP1k2","GP1k6","GP2k","GP2k5","GP3k1","GP4k","GP5k","GP6k3","GP8k","GP10k","GP12k","GP16k","GP20k"};
         for(int i=0;i<31;i++){auto p=mpc::floatParam((std::string("sweep_graph_peak_")+std::to_string(i)).c_str(),graphPeakNames[i],0,24,0,"LED",0);p.automatable=false;addParam(p);}
         auto diagnostic=mpc::choiceParam("sweep_diagnostic","Sweep Diagnostic",{"OK","LEGACY CSV AXIS REBUILT","CLIPPED INPUT","SWEEP FILE MISSING","CSV / RESPONSE INVALID","EXPORT WRITE FAILED","CALIBRATION FAILED","CAPTURE / API FAILED","PROCESSING FAILED"},0);diagnostic.automatable=false;addParam(diagnostic);
+        auto range=mpc::choiceParam("sweep_display_range","Display Range",{"24 dB","36 dB","48 dB","60 dB","72 dB"},2);range.automatable=false;addParam(range);
+        auto center=mpc::intParam("sweep_display_center","Display Center",-60,60,-12,"dB rel 1k");center.automatable=false;addParam(center);
+        auto minimum=mpc::floatParam("sweep_display_minimum","Window Low",-120,120,-36,"dB rel 1k",1);minimum.automatable=false;addParam(minimum);
+        auto maximum=mpc::floatParam("sweep_display_maximum","Window High",-120,120,12,"dB rel 1k",1);maximum.automatable=false;addParam(maximum);
+        for(int i=0;i<kSweepGraphTickCount;i++){
+            auto p=mpc::floatParam((std::string("sweep_graph_tick_")+std::to_string(i)).c_str(),(std::string("T")+std::to_string(i)).c_str(),-120,120,0,"dB",0);p.automatable=false;addParam(p);
+        }
+        for(int i=0;i<kSweepGraphSegmentCount;i++){
+            auto p=mpc::intParam((std::string("sweep_graph_segment_")+std::to_string(i)).c_str(),(std::string("G")+std::to_string(i)).c_str(),0,static_cast<int>(trollfx::sweep::kSweepGraphMissingFrame),static_cast<int>(trollfx::sweep::kSweepGraphMissingFrame));p.automatable=false;addParam(p);
+        }
+        for(int i=0;i<31;i++){
+            auto p=mpc::intParam((std::string("sweep_clip_state_")+std::to_string(i)).c_str(),(std::string("C")+std::to_string(i)).c_str(),0,3,3);p.automatable=false;addParam(p);
+        }
+        for(int i=0;i<31;i++){
+            auto p=mpc::floatParam((std::string("sweep_actual_smooth_db_")+std::to_string(i)).c_str(),(std::string("Actual S")+std::to_string(i)).c_str(),-240,120,-120,"dB rel 1k",2);p.automatable=false;addParam(p);
+        }
+        for(int i=0;i<31;i++){
+            auto p=mpc::floatParam((std::string("sweep_actual_raw_db_")+std::to_string(i)).c_str(),(std::string("Actual R")+std::to_string(i)).c_str(),-240,120,-120,"dB rel 1k",2);p.automatable=false;addParam(p);
+        }
         addProgram("RTA", defaults());
         SharedClient::instance().add(this);
         sweepThread_=std::thread(&TrollfxRta::sweepWorker,this);
@@ -248,6 +272,7 @@ public:
         if (index == kSweepCancel && value>=0.5f) { set(kSweepCancel,0.0f);sweepCancel_.store(true,std::memory_order_release);sweepCv_.notify_one(); }
         if (index == kSweepSmoothing) { reprocessRequested_.store(true,std::memory_order_release);sweepCv_.notify_one(); }
         if (index == kSweepMeasurement) { reprocessRequested_.store(true,std::memory_order_release);sweepCv_.notify_one(); }
+        if (index == kSweepDisplayRange || index == kSweepDisplayCenter) { displayRefreshRequested_.store(true,std::memory_order_release);sweepCv_.notify_one(); }
     }
     bool formatValue(int index, float v, std::string& out) override {
         if (index == kOrientation) { out = v < 0.5f ? "0 deg" : "90 deg"; return true; }
@@ -260,6 +285,7 @@ public:
         if (index == kSweepState) { static const char* names[]={"IDLE","STARTING","ARMED","CAPTURING","PROCESSING","READY","CANCELLED","ERROR"};int n=mpc::clamp(static_cast<int>(v),0,7);out=names[n];return true; }
         if (index == kSweepResultStatus) { static const char* names[]={"NO MEASUREMENT","LOADING","READY","INVALID"};int n=mpc::clamp(static_cast<int>(v),0,3);out=names[n];return true; }
         if (index == kSweepDiagnostic) { static const char* names[]={"OK","LEGACY CSV AXIS REBUILT","CLIPPED INPUT","SWEEP FILE MISSING","CSV / RESPONSE INVALID","EXPORT WRITE FAILED","CALIBRATION FAILED","CAPTURE / API FAILED","PROCESSING FAILED"};int n=mpc::clamp(static_cast<int>(v),0,8);out=names[n];return true; }
+        if (index == kSweepDisplayRange) { static const char* names[]={"24 dB","36 dB","48 dB","60 dB","72 dB"};int n=mpc::clamp(static_cast<int>(v),0,4);out=names[n];return true; }
         return false;
     }
     void update(const trollfx::Snapshot& s) {
@@ -339,13 +365,18 @@ public:
         v[kSweepResultStatus]=RESULT_NONE;
         for(int i=0;i<31;i++)v[kSweepGraphPeak0+i]=0;
         v[kSweepDiagnostic]=0;
+        v[kSweepDisplayRange]=2;v[kSweepDisplayCenter]=-12;v[kSweepDisplayMinimum]=-36;v[kSweepDisplayMaximum]=12;
+        for(int i=0;i<kSweepGraphTickCount;i++)v[kSweepGraphTick0+i]=12.0f-i*12.0f;
+        for(int i=0;i<kSweepGraphSegmentCount;i++)v[kSweepGraphSegment0+i]=static_cast<float>(trollfx::sweep::kSweepGraphMissingFrame);
+        for(int i=0;i<31;i++)v[kSweepClipState0+i]=3;
+        for(int i=0;i<62;i++)v[kSweepActualSmoothDb0+i]=-120.0f;
         return v;
     }
 private:
     void publishSweepState(int state){set(kSweepState,static_cast<float>(state));requestDisplayUpdate();}
     static std::string sessionRoot(){Dl_info info{};if(!dladdr(reinterpret_cast<void*>(&servicePathAnchor),&info)||!info.dli_fname)return {};char path[4096];if(!realpath(info.dli_fname,path))return {};std::string p(path);auto slash=p.find_last_of('/');if(slash==std::string::npos)return {};p.resize(slash);return p+"/../Service/sessions";}
     void sweepWorker(){
-        auto sleep=[this](int ms){std::unique_lock<std::mutex> lock(sweepMutex_);sweepCv_.wait_for(lock,std::chrono::milliseconds(ms),[this]{return sweepShutdown_.load(std::memory_order_acquire)||sweepStart_.load(std::memory_order_acquire)||sweepCancel_.load(std::memory_order_acquire)||reprocessRequested_.load(std::memory_order_acquire);});};
+        auto sleep=[this](int ms){std::unique_lock<std::mutex> lock(sweepMutex_);sweepCv_.wait_for(lock,std::chrono::milliseconds(ms),[this]{return sweepShutdown_.load(std::memory_order_acquire)||sweepStart_.load(std::memory_order_acquire)||sweepCancel_.load(std::memory_order_acquire)||reprocessRequested_.load(std::memory_order_acquire)||displayRefreshRequested_.load(std::memory_order_acquire);});};
         while(!sweepShutdown_.load(std::memory_order_acquire)){
             if(sweepCancel_.exchange(false,std::memory_order_acq_rel)){sweepActive_.store(false,std::memory_order_release);std::string ignored;request("/api/sweep/cancel","POST",ignored);publishSweepState(SWEEP_CANCELLED);}
             if(!sweepRunning_.load(std::memory_order_acquire)&&reprocessRequested_.exchange(false,std::memory_order_acq_rel)){
@@ -359,6 +390,14 @@ private:
                 if(latest.empty()){clearSweepResult(RESULT_NONE);set(kSweepDiagnostic,3.0f);}
                 else if(!trollfx::sweep::reprocessSession(latest.string(),resolutions[choice],1000.0,true,&error)){clearSweepResult(RESULT_INVALID);setSweepDiagnostic(error);}
                 else if(!updateSweepGraph(latest.string(),resolutions[choice],&error)){clearSweepResult(RESULT_INVALID);setSweepDiagnostic(error);}
+                requestDisplayUpdate();
+            }
+            if(!sweepRunning_.load(std::memory_order_acquire)&&displayRefreshRequested_.exchange(false,std::memory_order_acq_rel)){
+                const auto root=sessionRoot();std::error_code ec;std::vector<std::filesystem::path> sessions;
+                if(!root.empty()&&std::filesystem::exists(root,ec))for(const auto& entry:std::filesystem::directory_iterator(root,ec))if(entry.is_directory()&&entry.path().filename().string().rfind("sweep-",0)==0&&std::filesystem::exists(entry.path()/"frequency-response.csv"))sessions.push_back(entry.path());
+                std::sort(sessions.begin(),sessions.end(),[](const auto& a,const auto& b){return a.filename().string()>b.filename().string();});
+                const int selected=mpc::clamp(static_cast<int>(std::lround(get(kSweepMeasurement))),0,7);static const unsigned resolutions[]={0,48,24,12,6,3};const int smoothChoice=mpc::clamp(static_cast<int>(std::lround(get(kSweepSmoothing))),0,5);std::string error;
+                if(static_cast<std::size_t>(selected)<sessions.size())updateSweepGraph(sessions[selected].string(),resolutions[smoothChoice],&error);
                 requestDisplayUpdate();
             }
             if(!sweepStart_.exchange(false,std::memory_order_acq_rel)){sleep(50);continue;}
@@ -431,9 +470,18 @@ private:
         trollfx::sweep::ResponseCurve raw;std::string error;
         if(!trollfx::sweep::readResponseCsv(folder+"/frequency-response.csv",raw,&error)){if(outError)*outError=error;return false;}
         trollfx::sweep::SweepDisplayResponse display;
-        if(!trollfx::sweep::makeSweepDisplayResponse(raw,resolution,display,&error)){if(outError)*outError=error;return false;}
+        static const double ranges[]={24.0,36.0,48.0,60.0,72.0};const int rangeIndex=mpc::clamp(static_cast<int>(std::lround(get(kSweepDisplayRange))),0,4);
+        if(!trollfx::sweep::makeSweepDisplayResponse(raw,resolution,display,&error,ranges[rangeIndex],get(kSweepDisplayCenter))){if(outError)*outError=error;return false;}
         for(int i=0;i<31;i++)set(kSweepResponse0+i,display.led[static_cast<std::size_t>(i)]);
-        for(int i=0;i<31;i++){set(kSweepSmoothDb0+i,static_cast<float>(display.smoothedRelativeDb[static_cast<std::size_t>(i)]));set(kSweepRawDb0+i,static_cast<float>(display.rawRelativeDb[static_cast<std::size_t>(i)]));set(kSweepGraphPeak0+i,display.led[static_cast<std::size_t>(i)]);}
+        for(int i=0;i<31;i++){set(kSweepSmoothDb0+i,static_cast<float>(std::isfinite(display.smoothedRelativeDb[static_cast<std::size_t>(i)])?display.smoothedRelativeDb[static_cast<std::size_t>(i)]:-120.0));set(kSweepRawDb0+i,static_cast<float>(std::isfinite(display.rawRelativeDb[static_cast<std::size_t>(i)])?display.rawRelativeDb[static_cast<std::size_t>(i)]:-120.0));set(kSweepGraphPeak0+i,display.led[static_cast<std::size_t>(i)]);set(kSweepClipState0+i,static_cast<float>(display.clipping[static_cast<std::size_t>(i)]));}
+        for(int i=0;i<kSweepGraphSegmentCount;i++)set(kSweepGraphSegment0+i,static_cast<float>(display.graphSegmentFrame[static_cast<std::size_t>(i)]));
+        set(kSweepDisplayMinimum,static_cast<float>(display.displayMinimumDb));set(kSweepDisplayMaximum,static_cast<float>(display.displayMaximumDb));
+        for(int i=0;i<kSweepGraphTickCount;i++)set(kSweepGraphTick0+i,static_cast<float>(display.displayMaximumDb-display.displayRangeDb*i/(kSweepGraphTickCount-1)));
+        for(int i=0;i<31;i++){
+            const double smoothDb=display.smoothedRelativeDb[static_cast<std::size_t>(i)],rawDb=display.rawRelativeDb[static_cast<std::size_t>(i)];
+            set(kSweepActualSmoothDb0+i,static_cast<float>(std::isfinite(smoothDb)?smoothDb:-120.0));
+            set(kSweepActualRawDb0+i,static_cast<float>(std::isfinite(rawDb)?rawDb:-120.0));
+        }
         set(kSweepDiagnostic,raw.frequencyAxisReconstructed?1.0f:0.0f);
         set(kSweepResultStatus,RESULT_READY);requestDisplayUpdate();return true;
     }
@@ -441,11 +489,14 @@ private:
         for(int i=0;i<31;i++)set(kSweepResponse0+i,0.0f);
         for(int i=0;i<31;i++){set(kSweepSmoothDb0+i,-30.0f);set(kSweepRawDb0+i,-30.0f);}
         for(int i=0;i<31;i++)set(kSweepGraphPeak0+i,0.0f);
+        for(int i=0;i<kSweepGraphSegmentCount;i++)set(kSweepGraphSegment0+i,static_cast<float>(trollfx::sweep::kSweepGraphMissingFrame));
+        for(int i=0;i<31;i++)set(kSweepClipState0+i,3.0f);
+        for(int i=0;i<62;i++)set(kSweepActualSmoothDb0+i,-120.0f);
         set(kSweepResultStatus,static_cast<float>(state));
     }
     static mpc::PluginInfo makeInfo() {
         mpc::PluginInfo i; i.name="TROLLfx - VST - RTA"; i.vendor="TROLLfx"; i.uniqueId=kUid;
-        i.version=503; i.isInstrument=false; i.numInputs=2; i.numOutputs=2; i.tailSamples=1; return i;
+        i.version=504; i.isInstrument=false; i.numInputs=2; i.numOutputs=2; i.tailSamples=1; return i;
     }
     std::array<float,31> smoothState_{};
     std::array<float,31> meterState_{};
@@ -458,7 +509,7 @@ private:
     std::array<std::chrono::steady_clock::time_point,31> peakTime_{};
     std::array<std::chrono::steady_clock::time_point,16> peakTime16_{};
     std::chrono::steady_clock::time_point lastUpdate_{};
-    std::atomic<bool> sweepStart_{false},sweepCancel_{false},sweepShutdown_{false},sweepActive_{false},sweepAudioFinished_{false},sweepRunning_{false},reprocessRequested_{false};
+    std::atomic<bool> sweepStart_{false},sweepCancel_{false},sweepShutdown_{false},sweepActive_{false},sweepAudioFinished_{false},sweepRunning_{false},reprocessRequested_{false},displayRefreshRequested_{false};
     std::atomic<unsigned> hostSampleRate_{48000};
     std::atomic<unsigned> audioReaders_{0};
     std::atomic<const float*> sweepData_{nullptr};
