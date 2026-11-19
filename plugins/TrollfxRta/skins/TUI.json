@@ -4937,6 +4937,2734 @@
               "version": 2,
               "componentData": {
                 "version": 1,
+                "name": "rawTrace0",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 186"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "82.00 77 19.03 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace0",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 155"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "82.00 77 19.03 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace1",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 187"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "101.03 77 38.73 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace1",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 156"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "101.03 77 38.73 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace2",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 188"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "139.76 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace2",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 157"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "139.76 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace3",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 189"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "179.83 77 39.40 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace3",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 158"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "179.83 77 39.40 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace4",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 190"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "219.23 77 38.73 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace4",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 159"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "219.23 77 38.73 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace5",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 191"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "257.96 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace5",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 160"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "257.96 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace6",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 192"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "298.04 77 39.40 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace6",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 161"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "298.04 77 39.40 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace7",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 193"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "337.44 77 38.05 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace7",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 162"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "337.44 77 38.05 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace8",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 194"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "375.49 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace8",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 163"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "375.49 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace9",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 195"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "415.56 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace9",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 164"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "415.56 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace10",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 196"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "455.64 77 38.05 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace10",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 165"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "455.64 77 38.05 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace11",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 197"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "493.69 77 38.73 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace11",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 166"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "493.69 77 38.73 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace12",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 198"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "532.43 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace12",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 167"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "532.43 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace13",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 199"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "572.50 77 39.40 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace13",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 168"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "572.50 77 39.40 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace14",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 200"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "611.90 77 38.73 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace14",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 169"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "611.90 77 38.73 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace15",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 201"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "650.63 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace15",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 170"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "650.63 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace16",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 202"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "690.71 77 39.40 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace16",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 171"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "690.71 77 39.40 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace17",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 203"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "730.10 77 38.05 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace17",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 172"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "730.10 77 38.05 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace18",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 204"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "768.16 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace18",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 173"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "768.16 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace19",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 205"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "808.23 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace19",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 174"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "808.23 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace20",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 206"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "848.31 77 38.05 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace20",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 175"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "848.31 77 38.05 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace21",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 207"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "886.36 77 38.73 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace21",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 176"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "886.36 77 38.73 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace22",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 208"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "925.09 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace22",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 177"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "925.09 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace23",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 209"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "965.17 77 39.40 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace23",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 178"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "965.17 77 39.40 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace24",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 210"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1004.56 77 38.73 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace24",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 179"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1004.56 77 38.73 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace25",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 211"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1043.30 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace25",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 180"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1043.30 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace26",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 212"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1083.37 77 39.40 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace26",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 181"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1083.37 77 39.40 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace27",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 213"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1122.77 77 38.05 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace27",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 182"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1122.77 77 38.05 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace28",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 214"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1160.82 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace28",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 183"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1160.82 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace29",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 215"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1200.90 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace29",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 184"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1200.90 77 40.08 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "rawTrace30",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ff853b3f",
+                  "lineColourEnd": "ff853b3f",
+                  "horizLineGradient": false,
+                  "lineWidth": 1.1,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 216"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1240.97 77 19.03 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "smoothTrace30",
+                "type": "Plotter",
+                "data": {
+                  "version": 2,
+                  "backgroundColour": "0",
+                  "drawLine": true,
+                  "lineDirection": "Right",
+                  "tightClip": true,
+                  "lineColourStart": "ffff2633",
+                  "lineColourEnd": "ffff2633",
+                  "horizLineGradient": false,
+                  "lineWidth": 2.4,
+                  "fillColourStart": "0",
+                  "fillColourEnd": "0",
+                  "horizFillGradient": false,
+                  "fillZero": -30.0,
+                  "dataHandle": "Data",
+                  "dataMin": -30.0,
+                  "dataMax": 6.0,
+                  "drawHistory": false
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 185"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1240.97 77 19.03 223"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
                 "name": "responseBand0",
                 "type": "Image",
                 "data": {
@@ -4963,7 +7691,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "29 78 22 430"
+                "bounds": "29 365 22 108"
               }
             },
             {
@@ -4996,7 +7724,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "69 78 22 430"
+                "bounds": "69 365 22 108"
               }
             },
             {
@@ -5029,7 +7757,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "109 78 22 430"
+                "bounds": "109 365 22 108"
               }
             },
             {
@@ -5062,7 +7790,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "149 78 22 430"
+                "bounds": "149 365 22 108"
               }
             },
             {
@@ -5095,7 +7823,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "189 78 22 430"
+                "bounds": "189 365 22 108"
               }
             },
             {
@@ -5128,7 +7856,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "229 78 22 430"
+                "bounds": "229 365 22 108"
               }
             },
             {
@@ -5161,7 +7889,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "269 78 22 430"
+                "bounds": "269 365 22 108"
               }
             },
             {
@@ -5194,7 +7922,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "309 78 22 430"
+                "bounds": "309 365 22 108"
               }
             },
             {
@@ -5227,7 +7955,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "349 78 22 430"
+                "bounds": "349 365 22 108"
               }
             },
             {
@@ -5260,7 +7988,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "389 78 22 430"
+                "bounds": "389 365 22 108"
               }
             },
             {
@@ -5293,7 +8021,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "429 78 22 430"
+                "bounds": "429 365 22 108"
               }
             },
             {
@@ -5326,7 +8054,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "469 78 22 430"
+                "bounds": "469 365 22 108"
               }
             },
             {
@@ -5359,7 +8087,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "509 78 22 430"
+                "bounds": "509 365 22 108"
               }
             },
             {
@@ -5392,7 +8120,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "549 78 22 430"
+                "bounds": "549 365 22 108"
               }
             },
             {
@@ -5425,7 +8153,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "589 78 22 430"
+                "bounds": "589 365 22 108"
               }
             },
             {
@@ -5458,7 +8186,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "629 78 22 430"
+                "bounds": "629 365 22 108"
               }
             },
             {
@@ -5491,7 +8219,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "669 78 22 430"
+                "bounds": "669 365 22 108"
               }
             },
             {
@@ -5524,7 +8252,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "709 78 22 430"
+                "bounds": "709 365 22 108"
               }
             },
             {
@@ -5557,7 +8285,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "749 78 22 430"
+                "bounds": "749 365 22 108"
               }
             },
             {
@@ -5590,7 +8318,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "789 78 22 430"
+                "bounds": "789 365 22 108"
               }
             },
             {
@@ -5623,7 +8351,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "829 78 22 430"
+                "bounds": "829 365 22 108"
               }
             },
             {
@@ -5656,7 +8384,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "869 78 22 430"
+                "bounds": "869 365 22 108"
               }
             },
             {
@@ -5689,7 +8417,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "909 78 22 430"
+                "bounds": "909 365 22 108"
               }
             },
             {
@@ -5722,7 +8450,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "949 78 22 430"
+                "bounds": "949 365 22 108"
               }
             },
             {
@@ -5755,7 +8483,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "989 78 22 430"
+                "bounds": "989 365 22 108"
               }
             },
             {
@@ -5788,7 +8516,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1029 78 22 430"
+                "bounds": "1029 365 22 108"
               }
             },
             {
@@ -5821,7 +8549,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1069 78 22 430"
+                "bounds": "1069 365 22 108"
               }
             },
             {
@@ -5854,7 +8582,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1109 78 22 430"
+                "bounds": "1109 365 22 108"
               }
             },
             {
@@ -5887,7 +8615,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1149 78 22 430"
+                "bounds": "1149 365 22 108"
               }
             },
             {
@@ -5920,7 +8648,7 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1189 78 22 430"
+                "bounds": "1189 365 22 108"
               }
             },
             {
@@ -5953,14 +8681,14 @@
                 "showWhenDataModelInvalid": "Hide",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "1229 78 22 430"
+                "bounds": "1229 365 22 108"
               }
             },
             {
               "version": 2,
               "componentData": {
                 "version": 1,
-                "name": "responseSmoothingLabel",
+                "name": "resultStatus",
                 "type": "Label",
                 "data": {
                   "version": 1,
@@ -5972,13 +8700,55 @@
                       "style": "Regular",
                       "height": 18.0
                     },
+                    "colour": "ffff9b55",
+                    "justification": "left verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Value",
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 217"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "875 336 360 28"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "resultControlLabel122",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "Regular",
+                      "height": 15.0
+                    },
                     "colour": "ffff7777",
                     "justification": "left verticallyCentred",
                     "case": "Original"
                   },
                   "type": "Text",
                   "handleName": "Invalid",
-                  "text": "Select smoothing on SWEEP page \u00b7 graph is relative to 1 kHz"
+                  "text": "SMOOTHING"
                 }
               },
               "handle remapping": {
@@ -5991,7 +8761,103 @@
                 "showWhenDataModelInvalid": "Show",
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
-                "bounds": "55 570 1160 36"
+                "bounds": "55 516 520 24"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "resultControl122",
+                "type": "Slider",
+                "data": {
+                  "version": 1,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 122"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "55 541 520 56"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "resultControlLabel123",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "Regular",
+                      "height": 15.0
+                    },
+                    "colour": "ffff7777",
+                    "justification": "left verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Text",
+                  "handleName": "Invalid",
+                  "text": "SAVED MEASUREMENT"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "655 516 520 24"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "resultControl123",
+                "type": "Slider",
+                "data": {
+                  "version": 1,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 123"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "655 541 520 56"
               }
             }
           ]

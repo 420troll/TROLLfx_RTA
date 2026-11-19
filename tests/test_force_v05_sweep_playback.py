@@ -74,9 +74,11 @@ def main():
     try:
         sessions = pathlib.Path(sys.argv[2]).resolve().parent.parent / "Service" / "sessions"
         sessions.mkdir(parents=True, exist_ok=True)
-        for name in ("sweep-0001", "sweep-0002"):
+        for name, peak in (("sweep-0001", 0.25), ("sweep-0002", 1.0)):
             old = sessions / name; old.mkdir(exist_ok=True)
-            (old / "frequency-response.csv").write_text("frequency_hz,magnitude,gain_db,phase_rad\n20,0.5,-6.0206,0\n1000,0.5,-6.0206,0\n20000,0.5,-6.0206,0\n")
+            (old / "frequency-response.csv").write_text(
+                "frequency_hz,magnitude,gain_db,phase_rad\n"
+                f"20,0.5,-6.0206,0\n1000,0.5,-6.0206,0\n5000,{peak},{20*__import__('math').log10(peak)},0\n20000,0.5,-6.0206,0\n")
             (old / "measurement.json").write_text('{"format":"V0.5 legacy","clipped_samples":0}\n')
         result = subprocess.run([sys.argv[1], pathlib.Path(sys.argv[2]).resolve(), "--sweep-playback"],
                                 env=env, timeout=20, check=False)

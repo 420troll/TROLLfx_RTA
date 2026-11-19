@@ -29,6 +29,8 @@ def main():
     env=os.environ.copy();env["TROLLFX_RTA_PORT"]=str(PORT)
     try:
         result=subprocess.run([sys.argv[1],sys.argv[2]],env=env,check=False)
+        if result.returncode==0:
+            result=subprocess.run([sys.argv[1],sys.argv[2],"--saved-v051-state-compat"],env=env,check=False)
         if result.returncode==0 and len(sys.argv)==4:
             result=subprocess.run([sys.argv[1],sys.argv[2],"--saved-state-compat",sys.argv[3]],env=env,check=False)
         before=hits

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Generate source-controlled native MPC skin art and parameter-bound LED ladders."""
 import json
+import math
 import os
 from PIL import Image, ImageDraw, ImageFont
 
@@ -49,6 +50,33 @@ def panel(filename, centers, title):
     d.text((24,595),"CORRECTED BAND LEVEL  ·  DISPLAY GAIN / FLOOR APPLY TO LEDS ONLY",font=font(15),fill=(132,63,66,255))
     im.save(os.path.join(ROOT,filename))
 
+def response_panel(filename):
+    im=Image.new("RGBA",(1280,628),(8,4,5,255)); d=ImageDraw.Draw(im)
+    d.rectangle((0,0,1279,61),fill=(18,5,7,255));d.line((0,61,1279,61),fill=(115,24,31,255),width=2)
+    d.text((24,13),"TROLLfx / RTA  ·  V0.5.2  ·  BUILD 502",font=font(24,True),fill=(255,75,76,255))
+    d.text((860,21),"SWEEP RESULTS  /  SAVED RESPONSE",font=font(16,True),fill=(196,88,85,255))
+    x0,x1,y0,y1=82,1260,77,300
+    d.rectangle((x0,y0,x1,y1),fill=(10,5,6,255),outline=(91,22,27,255),width=2)
+    def xfreq(hz): return x0+(math.log(hz/20.0)/math.log(1000.0))*(x1-x0)
+    for db in (6,0,-6,-12,-18,-24,-30):
+        y=y0+(6-db)/36.0*(y1-y0)
+        d.line((x0,y,x1,y),fill=(104,38,43,255) if db==0 else (57,24,28,255),width=2 if db==0 else 1)
+        d.text((74,y),f"{db:+d}",font=font(12,True),fill=(201,126,126,255),anchor="rm")
+    d.text((20,76),"dB",font=font(12,True),fill=(201,126,126,255))
+    for hz,label in [(20,"20"),(31.5,"31"),(50,"50"),(100,"100"),(200,"200"),(500,"500"),(1000,"1k"),(2000,"2k"),(5000,"5k"),(10000,"10k"),(20000,"20k")]:
+        x=xfreq(hz);d.line((x,y0,x,y1),fill=(47,22,25,255),width=1)
+        d.text((x,306),label,font=font(12,True),fill=(218,150,150,255),anchor="mt")
+    d.text((24,340),"31-BAND RESPONSE  ·  -30 TO +6 dB REL. 1 kHz",font=font(15,True),fill=(202,91,91,255))
+    d.line((570,348,598,348),fill=(133,59,63,255),width=2);d.text((604,340),"RAW",font=font(12,True),fill=(177,111,111,255))
+    d.line((660,348,690,348),fill=(255,38,51,255),width=3);d.text((697,340),"SMOOTHED",font=font(12,True),fill=(220,128,128,255))
+    d.rectangle((15,363,1265,476),fill=(10,5,6,255),outline=(91,22,27,255),width=1)
+    d.line((20,475,1260,475),fill=(82,22,26,255),width=1)
+    centers=["20","25","31","40","50","63","80","100","125","160","200","250","315","400","500","630","800","1k","1k2","1k6","2k","2k5","3k1","4k","5k","6k3","8k","10k","12k","16k","20k"]
+    gap=1240/len(centers);width=22;start=20+(gap-width)/2
+    for i,label in enumerate(centers):
+        x=int(start+i*gap+width/2);d.text((x,481),label,font=font(10,True),fill=(200,130,130,255),anchor="mt")
+    im.save(os.path.join(ROOT,filename))
+
 def entry(name, typ, data, bounds, handle=None, focus="No"):
     remap=[] if handle is None else [{"key":"Data","value":f"Parameter {handle}"}]
     return {"version":2,"componentData":{"version":1,"name":name,"type":typ,"data":data},
@@ -59,6 +87,14 @@ def entry(name, typ, data, bounds, handle=None, focus="No"):
 def image_entry(name, idx, asset, x, y=82, w=28, h=420):
     data={"version":2,"imageType":"FilmStrip","colour":"0","image":asset,"numFrames":25,"handleName":"Data"}
     return entry(name,"Image",data,f"{x} {y} {w} {h}",idx)
+
+def plotter_entry(name, idx, colour, line_width, bounds):
+    data={"version":2,"backgroundColour":"0","drawLine":True,"lineDirection":"Right","tightClip":True,
+          "lineColourStart":colour,"lineColourEnd":colour,"horizLineGradient":False,"lineWidth":line_width,
+          "fillColourStart":"0","fillColourEnd":"0","horizFillGradient":False,"fillZero":-24.0,
+          "dataHandle":"Data","dataMin":-30.0,"dataMax":6.0,"drawHistory":False}
+    data["fillZero"]=-30.0
+    return entry(name,"Plotter",data,bounds,idx)
 
 def text_style(size, color, align="left verticallyCentred", bold=False):
     return {"version":1,"font":{"version":1,"name":"Titillium Web","style":"Bold" if bold else "Regular","height":float(size)},
@@ -119,11 +155,23 @@ def main():
     sweep_entries.append(entry("sweepNote","Label",{"version":1,"textStyle":text_style(15,"ffbb7777"),"type":"Text","handleName":"Invalid","text":"Changes re-render the selected saved session; they do not replay or record a sweep. Results remain under Service/sessions."},"55 574 1160 34"))
     tabs.append(tab("SWEEP",4,sweep_entries))
     response_centers=["20","25","31","40","50","63","80","100","125","160","200","250","315","400","500","630","800","1k","1k2","1k6","2k","2k5","3k1","4k","5k","6k3","8k","10k","12k","16k","20k"]
-    panel("response-panel.png",response_centers,"SWEEP RESULTS  /  RELATIVE TO 1 kHz")
+    response_panel("response-panel.png")
     response_entries=[entry("responseBackground","Image",{"version":2,"imageType":"Regular","colour":"0","image":"response-panel.png"},"0 0 1280 628")]
-    gap=1240/31;width=max(16,int(gap*.56));start=20+(gap-width)/2
-    for i in range(31):response_entries.append(image_entry("responseBand"+str(i),124+i,"led-ladder.png",int(start+i*gap),y=78,w=width,h=430))
-    response_entries.append(entry("responseSmoothingLabel","Label",{"version":1,"textStyle":text_style(18,"ffff7777"),"type":"Text","handleName":"Invalid","text":"Select smoothing on SWEEP page · graph is relative to 1 kHz"},"55 570 1160 36"))
+    centers_hz=[20,25,31.5,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000]
+    graph_x0,graph_x1,graph_y0,graph_y1=82,1260,77,300
+    def freq_x(hz): return graph_x0+math.log(hz/20.0)/math.log(1000.0)*(graph_x1-graph_x0)
+    for i,hz in enumerate(centers_hz):
+        left=graph_x0 if i==0 else freq_x(math.sqrt(centers_hz[i-1]*hz))
+        right=graph_x1 if i==30 else freq_x(math.sqrt(hz*centers_hz[i+1]))
+        bounds=f"{left:.2f} {graph_y0} {right-left:.2f} {graph_y1-graph_y0}"
+        response_entries.append(plotter_entry(f"rawTrace{i}",186+i,"ff853b3f",1.1,bounds))
+        response_entries.append(plotter_entry(f"smoothTrace{i}",155+i,"ffff2633",2.4,bounds))
+    gap=1240/31;width=22;start=20+(gap-width)/2
+    for i in range(31):response_entries.append(image_entry("responseBand"+str(i),124+i,"led-ladder.png",int(start+i*gap),y=365,w=width,h=108))
+    response_entries.append(label_entry("resultStatus",217,875,336,360,28,size=18,color="ffff9b55"))
+    for idx,label,x in [(122,"SMOOTHING",55),(123,"SAVED MEASUREMENT",655)]:
+        response_entries.append(entry("resultControlLabel"+str(idx),"Label",{"version":1,"textStyle":text_style(15,"ffff7777"),"type":"Text","handleName":"Invalid","text":label},f"{x} 516 520 24"))
+        response_entries.append(entry("resultControl"+str(idx),"Slider",{"version":1,"handleName":"Data"},f"{x} 541 520 56",idx,"Yes"))
     tabs.append(tab("SWEEP RESULTS",5,response_entries))
     level_entries=[]
     bg=Image.new("RGBA",(1280,628),(8,4,5,255)); d=ImageDraw.Draw(bg)
@@ -143,6 +191,8 @@ def main():
             assignments["Q-Link 11"]=111; assignments["Q-Link 12"]=112; assignments["Q-Link 13"]=113
         if t==4:
             for n,idx in enumerate((118,119,120,121),1): assignments[f"Q-Link {n}"]=idx
+            assignments["Q-Link 5"]=122; assignments["Q-Link 6"]=123
+        if t==5:
             assignments["Q-Link 5"]=122; assignments["Q-Link 6"]=123
         qlinks.append({"Tab":t+1,"SubTab":1,"Bank Direction":"Column","Q-Links":assignments})
     q={"version":4,"info":{"version":1,"type":"CompleteDescription"},"Screen Mode Q-Links":{"version":4,"map":qlinks},"Program Mode Q-Links":{f"Q-Link {n}":-1 for n in range(1,17)}}
