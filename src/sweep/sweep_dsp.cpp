@@ -297,7 +297,7 @@ bool writeFloatWav(const std::string& path,const std::vector<double>& samples,un
 bool writeArtifacts(const std::string& dir,const AnalysisResult& r,unsigned fs,double f0,double f1,std::string* e,unsigned smoothing) {
     std::error_code ec;std::filesystem::create_directories(dir,ec);if(ec)return fail(e,"cannot create output directory");
     if(!writeFloatWav(dir+"/impulse.wav",r.impulse,fs,e))return false;
-    {std::ofstream f(dir+"/frequency-response.csv");if(!f)return fail(e,"cannot write response CSV");f<<"frequency_hz,magnitude,gain_db,phase_rad\n";for(std::size_t i=0;i<r.frequencyHz.size();i++)if(r.frequencyHz[i]>=f0&&r.frequencyHz[i]<=f1)f<<r.frequencyHz[i]<<','<<r.magnitude[i]<<','<<r.magnitudeDb[i]<<','<<r.phaseRadians[i]<<'\n';}
+    {std::ofstream f(dir+"/frequency-response.csv");if(!f)return fail(e,"cannot write response CSV");f<<"frequency_hz,magnitude,gain_db,phase_rad\n"<<std::setprecision(std::numeric_limits<double>::max_digits10);for(std::size_t i=0;i<r.frequencyHz.size();i++)if(r.frequencyHz[i]>=f0&&r.frequencyHz[i]<=f1)f<<r.frequencyHz[i]<<','<<r.magnitude[i]<<','<<r.magnitudeDb[i]<<','<<r.phaseRadians[i]<<'\n';}
     {
         std::ofstream f(dir+"/measurement.json");if(!f)return fail(e,"cannot write measurement metadata");
         f<<"{\n  \"format\": \"TROLLfx Sweep Lab V0.5\",\n  \"sample_rate_hz\": "<<fs<<",\n  \"start_hz\": "<<f0<<",\n  \"stop_hz\": "<<f1<<",\n  \"impulse_peak_sample\": "<<r.impulsePeak<<",\n  \"clipped_samples\": "<<r.clippedSamples<<",\n  \"input_peak\": "<<r.inputPeak<<",\n  \"clock_correction_ppm\": "<<r.residualClockPpm<<",\n  \"marker_alignment_valid\": "<<(r.markerAlignmentValid?"true":"false")<<",\n  \"captured_first_marker_sample\": ";
@@ -323,6 +323,44 @@ double interpLog(const std::vector<double>& x,const std::vector<double>& y,doubl
     const double t=std::log(q/x[a])/std::log(x[b]/x[a]); return y[a]+t*(y[b]-y[a]);
 }
 std::string smoothingName(unsigned n) { if(!n)return "none"; return "1/"+std::to_string(n)+" octave"; }
+
+bool jsonNumber(const std::string& json,const char* key,double& value) {
+    const std::string quoted=std::string("\"")+key+"\"";
+    const auto at=json.find(quoted); if(at==std::string::npos)return false;
+    const auto colon=json.find(':',at+quoted.size()); if(colon==std::string::npos)return false;
+    const char* begin=json.c_str()+colon+1; while(*begin&&std::isspace(static_cast<unsigned char>(*begin)))++begin;
+    char* end=nullptr; value=std::strtod(begin,&end);
+    return end!=begin&&std::isfinite(value);
+}
+
+// Older V0.5.2 exports wrote the frequency column with ostream's default
+// precision. For long FFTs this rounded adjacent bins to identical text. Only
+// repair that exact legacy serialization, and only when every CSV token
+// matches the six-significant-digit rendering of the bin derived from the
+// unchanged impulse WAV and measurement metadata.
+bool reconstructLegacyAxis(const std::string& csvPath,const std::vector<std::string>& tokens,
+                           std::vector<double>& axis,std::string* error) {
+    const auto slash=csvPath.find_last_of('/'); const std::string dir=slash==std::string::npos?".":csvPath.substr(0,slash);
+    std::ifstream mf(dir+"/measurement.json"); if(!mf)return fail(error,"legacy frequency axis is rounded and measurement metadata is unavailable");
+    const std::string metadata((std::istreambuf_iterator<char>(mf)),{}); double fsMeta=0,startHz=0,stopHz=0;
+    if(!jsonNumber(metadata,"sample_rate_hz",fsMeta)||!jsonNumber(metadata,"start_hz",startHz)||!jsonNumber(metadata,"stop_hz",stopHz)||fsMeta<=0||startHz<=0||stopHz<=startHz)
+        return fail(error,"legacy frequency axis is rounded and sweep metadata is invalid");
+    std::vector<double> impulse; unsigned fsWav=0;
+    if(!readWav(dir+"/impulse.wav",impulse,fsWav,error))return false;
+    if(impulse.size()<2||fsWav!=static_cast<unsigned>(std::llround(fsMeta)))return fail(error,"legacy frequency axis cannot be verified against impulse WAV sample rate");
+    const double binHz=static_cast<double>(fsWav)/impulse.size();
+    std::size_t token=0;
+    for(std::size_t k=0;k<impulse.size();++k) {
+        const double hz=k*binHz;
+        if(hz<startHz||hz>stopHz)continue;
+        if(token>=tokens.size())return fail(error,"legacy response row count does not match impulse FFT bins");
+        std::ostringstream legacy; legacy<<std::setprecision(6)<<hz;
+        if(legacy.str()!=tokens[token])return fail(error,"legacy frequency tokens do not match the impulse FFT bin grid");
+        axis[token++]=hz;
+    }
+    if(token!=tokens.size()||token<2)return fail(error,"legacy response row count does not match impulse FFT bins");
+    return true;
+}
 }
 
 bool fractionalOctaveSmooth(const std::vector<double>& f,const std::vector<double>& m,unsigned n,std::vector<double>& out,std::string* e) {
@@ -346,14 +384,19 @@ double responseDbAt(const std::vector<double>& f,const std::vector<double>& m,do
 bool readResponseCsv(const std::string& path,ResponseCurve& r,std::string* e) {
     std::ifstream in(path);if(!in)return fail(e,"cannot open raw response CSV");std::string line;std::getline(in,line);
     if(line!="frequency_hz,magnitude,gain_db,phase_rad")return fail(e,"unsupported response CSV header");
-    r=ResponseCurve{};while(std::getline(in,line)){std::istringstream s(line);std::string a,b,c,d;if(!std::getline(s,a,',')||!std::getline(s,b,',')||!std::getline(s,c,',')||!std::getline(s,d,','))return fail(e,"malformed response CSV row");try{r.frequencyHz.push_back(std::stod(a));r.magnitude.push_back(std::stod(b));r.gainDb.push_back(std::stod(c));r.phaseRadians.push_back(std::stod(d));}catch(...){return fail(e,"invalid response CSV number");}}
+    r=ResponseCurve{};std::vector<std::string> frequencyTokens;while(std::getline(in,line)){std::istringstream s(line);std::string a,b,c,d;if(!std::getline(s,a,',')||!std::getline(s,b,',')||!std::getline(s,c,',')||!std::getline(s,d,','))return fail(e,"malformed response CSV row");try{frequencyTokens.push_back(a);r.frequencyHz.push_back(std::stod(a));r.magnitude.push_back(std::stod(b));r.gainDb.push_back(std::stod(c));r.phaseRadians.push_back(std::stod(d));}catch(...){return fail(e,"invalid response CSV number");}}
     if(r.frequencyHz.size()<2)return fail(e,"incomplete response CSV");
     std::vector<double> check;
-    if(!fractionalOctaveSmooth(r.frequencyHz,r.magnitude,0,check,e))return false;
+    if(!fractionalOctaveSmooth(r.frequencyHz,r.magnitude,0,check,nullptr)) {
+        std::vector<double> reconstructed(r.frequencyHz.size());
+        if(!reconstructLegacyAxis(path,frequencyTokens,reconstructed,e))return false;
+        r.frequencyHz=std::move(reconstructed);r.frequencyAxisReconstructed=true;
+        if(!fractionalOctaveSmooth(r.frequencyHz,r.magnitude,0,check,e))return false;
+    }
     return true;
 }
 
-bool writeSmoothedArtifacts(const std::string& dir,const ResponseCurve& raw,unsigned n,double ref,bool rawTrace,std::string* e) {
+bool writeSmoothedArtifacts(const std::string& dir,const ResponseCurve& raw,unsigned n,double ref,bool rawTrace,std::string* e,bool updateMetadata) {
     static std::mutex outputMutex;
     std::lock_guard<std::mutex> outputLock(outputMutex);
     if(!validResolution(n)||!std::isfinite(ref)||ref<=0)return fail(e,"invalid smoothing or reference frequency");
@@ -372,6 +415,7 @@ bool writeSmoothedArtifacts(const std::string& dir,const ResponseCurve& raw,unsi
         if(rawTrace)path(raw.magnitude,"#8b5555",1,0.55);
         path(sm,"#ff3030",2.5,1);
         f<<"<text x=\"880\" y=\"52\" fill=\"#ddd\" font-size=\"12\">Shape reference: "<<ref<<" Hz = "<<(refMag>0?20*std::log10(refMag):0)<<" dB absolute</text></svg>";}
+    if(!updateMetadata)return true;
     const std::string meta=dir+"/measurement.json";std::ifstream mf(meta);std::string json;if(mf)json.assign(std::istreambuf_iterator<char>(mf),{});else json="{\n}\n";
     const std::size_t close=json.find_last_of('}');if(close==std::string::npos)return fail(e,"invalid measurement metadata");json.erase(close);
     const char* fields[]={"response_smoothing_octaves","smoothing_algorithm_version","smoothing_method","graph_reference_hz","graph_reference_level_db","graph_raw_trace"};
@@ -386,6 +430,6 @@ bool writeSmoothedArtifacts(const std::string& dir,const ResponseCurve& raw,unsi
 bool reprocessSession(const std::string& dir,unsigned n,double ref,bool rawTrace,std::string* e) {
     {std::ifstream metadata(dir+"/measurement.json");if(metadata){std::string json((std::istreambuf_iterator<char>(metadata)),{});const auto key=json.find("\"clipped_samples\"");if(key!=std::string::npos){const auto colon=json.find(':',key);if(colon!=std::string::npos){char* end=nullptr;const unsigned long long clipped=std::strtoull(json.c_str()+colon+1,&end,10);if(end!=json.c_str()+colon+1&&clipped>0)return fail(e,"clipped measurement cannot be smoothed or graphed as a valid response");}}}}
     ResponseCurve raw;if(!readResponseCsv(dir+"/frequency-response.csv",raw,e))return false;
-    return writeSmoothedArtifacts(dir,raw,n,ref,rawTrace,e);
+    return writeSmoothedArtifacts(dir,raw,n,ref,rawTrace,e,!raw.frequencyAxisReconstructed);
 }
 } // namespace trollfx::sweep

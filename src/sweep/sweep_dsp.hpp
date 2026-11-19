@@ -77,6 +77,9 @@ struct ResponseCurve {
     std::vector<double> magnitude;
     std::vector<double> gainDb;
     std::vector<double> phaseRadians;
+    // True when a legacy V0.5.2 CSV had rounded duplicate frequencies and its
+    // frequency axis was reconstructed from the untouched impulse WAV/metadata.
+    bool frequencyAxisReconstructed = false;
 };
 
 bool validate(const SweepOptions& options, std::string* error = nullptr);
@@ -135,7 +138,8 @@ bool writeSmoothedArtifacts(const std::string& directory,
                             unsigned octaveDenominator,
                             double referenceHz = 1000.0,
                             bool includeRawTrace = true,
-                            std::string* error = nullptr);
+                            std::string* error = nullptr,
+                            bool updateMetadata = true);
 // Re-render an existing session from its unsmoothed frequency-response.csv.
 // Raw WAV/CSV/IR/phase data are read-only; only graph, smoothed CSV and
 // smoothing metadata are updated.

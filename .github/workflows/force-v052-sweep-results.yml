@@ -3,9 +3,10 @@ on:
   push:
     branches: [feature/v052-sweep-results-display]
   pull_request:
-    branches: [feature/v051-sweep-smoothing]
+    branches: [feature/v051-sweep-smoothing, feature/v052-sweep-results-display]
 jobs:
   sweep-results-and-arm-package:
+    if: ${{ !startsWith(github.head_ref, 'feature/v053-') }}
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
