@@ -297,7 +297,7 @@ bool writeFloatWav(const std::string& path,const std::vector<double>& samples,un
 bool writeArtifacts(const std::string& dir,const AnalysisResult& r,unsigned fs,double f0,double f1,std::string* e,unsigned smoothing) {
     std::error_code ec;std::filesystem::create_directories(dir,ec);if(ec)return fail(e,"cannot create output directory");
     if(!writeFloatWav(dir+"/impulse.wav",r.impulse,fs,e))return false;
-    {std::ofstream f(dir+"/frequency-response.csv");if(!f)return fail(e,"cannot write response CSV");f<<"frequency_hz,magnitude,gain_db,phase_rad\n";for(std::size_t i=0;i<r.frequencyHz.size();i++)if(r.frequencyHz[i]>=f0&&r.frequencyHz[i]<=f1)f<<r.frequencyHz[i]<<','<<r.magnitude[i]<<','<<r.magnitudeDb[i]<<','<<r.phaseRadians[i]<<'\n';}
+    {std::ofstream f(dir+"/frequency-response.csv");if(!f)return fail(e,"cannot write response CSV");f<<"frequency_hz,magnitude,gain_db,phase_rad\n"<<std::setprecision(std::numeric_limits<double>::max_digits10);for(std::size_t i=0;i<r.frequencyHz.size();i++)if(r.frequencyHz[i]>=f0&&r.frequencyHz[i]<=f1)f<<r.frequencyHz[i]<<','<<r.magnitude[i]<<','<<r.magnitudeDb[i]<<','<<r.phaseRadians[i]<<'\n';}
     {
         std::ofstream f(dir+"/measurement.json");if(!f)return fail(e,"cannot write measurement metadata");
         f<<"{\n  \"format\": \"TROLLfx Sweep Lab V0.5\",\n  \"sample_rate_hz\": "<<fs<<",\n  \"start_hz\": "<<f0<<",\n  \"stop_hz\": "<<f1<<",\n  \"impulse_peak_sample\": "<<r.impulsePeak<<",\n  \"clipped_samples\": "<<r.clippedSamples<<",\n  \"input_peak\": "<<r.inputPeak<<",\n  \"clock_correction_ppm\": "<<r.residualClockPpm<<",\n  \"marker_alignment_valid\": "<<(r.markerAlignmentValid?"true":"false")<<",\n  \"captured_first_marker_sample\": ";

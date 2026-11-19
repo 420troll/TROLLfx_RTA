@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <sstream>
 #include <vector>
 
 int main(){
@@ -67,6 +68,30 @@ int main(){
     assert(analyze(x,noisy,ao,corrected,&error));for(double v:corrected.impulse)assert(std::isfinite(v));
     const auto dir=std::filesystem::temp_directory_path()/"trollfx-sweep-dsp-test";std::filesystem::remove_all(dir);assert(writeArtifacts(dir.string(),corrected,8000,40,3000,&error));
     assert(std::filesystem::exists(dir/"impulse.wav")&&std::filesystem::exists(dir/"frequency-response.csv")&&std::filesystem::exists(dir/"frequency-response.svg")&&std::filesystem::exists(dir/"measurement.json"));std::filesystem::remove_all(dir);
+    // A 10 s 48 kHz sweep/capture pair produces a 1,048,576 point transfer
+    // FFT. At this resolution default ostream precision rounds adjacent bins
+    // to the same printed frequency (the Force failure near 10 kHz/19.8 kHz).
+    constexpr std::size_t longFftSize=1u<<20;constexpr unsigned longSampleRate=48000;constexpr double longStopHz=19845.0;
+    AnalysisResult longResponse;longResponse.impulse={0.0};
+    for(std::size_t k=0;k<=longFftSize/2;k++){
+        const double hz=static_cast<double>(k)*longSampleRate/static_cast<double>(longFftSize);
+        if(hz<20.0||hz>longStopHz)continue;
+        longResponse.frequencyHz.push_back(hz);longResponse.magnitude.push_back(0.5);longResponse.magnitudeDb.push_back(20.0*std::log10(0.5));longResponse.phaseRadians.push_back(0.0);
+    }
+    bool defaultPrecisionCollision=false;
+    for(std::size_t i=1;i<longResponse.frequencyHz.size();i++){
+        std::ostringstream previous,current;previous<<longResponse.frequencyHz[i-1];current<<longResponse.frequencyHz[i];
+        if(previous.str()==current.str()){defaultPrecisionCollision=true;break;}
+    }
+    assert(defaultPrecisionCollision);
+    const auto precisionDir=std::filesystem::temp_directory_path()/"trollfx-sweep-csv-precision-test";std::filesystem::remove_all(precisionDir);
+    assert(writeArtifacts(precisionDir.string(),longResponse,longSampleRate,20.0,longStopHz,&error,6));
+    ResponseCurve longRoundTrip;assert(readResponseCsv((precisionDir/"frequency-response.csv").string(),longRoundTrip,&error));
+    assert(longRoundTrip.frequencyHz==longResponse.frequencyHz);
+    assert(longRoundTrip.magnitude==longResponse.magnitude&&longRoundTrip.gainDb==longResponse.magnitudeDb&&longRoundTrip.phaseRadians==longResponse.phaseRadians);
+    for(std::size_t i=1;i<longRoundTrip.frequencyHz.size();i++)assert(longRoundTrip.frequencyHz[i]>longRoundTrip.frequencyHz[i-1]);
+    assert(std::filesystem::exists(precisionDir/"frequency-response-smoothed.csv")&&std::filesystem::exists(precisionDir/"frequency-response.svg"));
+    std::filesystem::remove_all(precisionDir);
     // Fractional-octave smoothing is magnitude-domain and log-frequency based.
     std::vector<double> freq,flatMag,peakMag;for(int i=0;i<=1200;i++){double hz=20*std::pow(1000.0,i/1200.0);freq.push_back(hz);flatMag.push_back(0.5);double z=std::log2(hz/1000.0);peakMag.push_back(0.5+2.0*std::exp(-0.5*(z/.018)*(z/.018)));}
     std::vector<double> sm;assert(fractionalOctaveSmooth(freq,flatMag,6,sm,&error));for(double v:sm)assert(std::abs(v-.5)<1e-10);
