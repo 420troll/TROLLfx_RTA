@@ -1,0 +1,37 @@
+7432411892baf85e8c0d78e2e57b4da7d54f94e17860fd5a76f4df3d8ccd18e7  ./FORCE-NATIVE-V04.md
+523f95d68cadbf95a194cfe7817b1f0164c18d257eab056c2e950c2c08ee1498  ./FORCE-NATIVE-V054-HARDWARE-TEST.md
+e30211513713a5a4308cd56ba93298df3d94af73db0e73935a0a3a89e51df670  ./FORCE-NATIVE-V054-RESULTS.md
+523f95d68cadbf95a194cfe7817b1f0164c18d257eab056c2e950c2c08ee1498  ./TROLLfx - VST - TROLLfx - VST - RTA/FORCE-NATIVE-V054-HARDWARE-TEST.md
+e30211513713a5a4308cd56ba93298df3d94af73db0e73935a0a3a89e51df670  ./TROLLfx - VST - TROLLfx - VST - RTA/FORCE-NATIVE-V054-RESULTS.md
+3e705d5f194cb6bc162f8e060959adaf0d3f0827cee7a872dbff74dc5be55ad0  ./TROLLfx - VST - TROLLfx - VST - RTA/HARDWARE-ACCEPTANCE.md
+ae49d7043a740020959b42abce0d7cc4a38f92025f12cb34c08c8f7b32580336  ./TROLLfx - VST - TROLLfx - VST - RTA/Plugin Skins/Q-Links.json
+bb77ab96e579604b71918556feee5552dae41b4353f714171d8e58df831a1129  ./TROLLfx - VST - TROLLfx - VST - RTA/Plugin Skins/TUI.json
+26d9a7f6e82a0f3903cd341fb3ce751c1ee5f5f4ce11d8f2488eb15f2788df4b  ./TROLLfx - VST - TROLLfx - VST - RTA/Plugin Skins/led-ladder.png
+b1a11991a7715448413385bb836df601395a22ac4c94b335c799f5e8f6f68731  ./TROLLfx - VST - TROLLfx - VST - RTA/Plugin Skins/level-panel.png
+f3c360d5ebc9478b83cecaa0d4793f4490a8760f60f0a70353a065110079d3db  ./TROLLfx - VST - TROLLfx - VST - RTA/Plugin Skins/panel16.png
+0fdf088dd683644c6d21a07829a9e9e609356ecf96ebb8dfaf96e5f86a382ec5  ./TROLLfx - VST - TROLLfx - VST - RTA/Plugin Skins/panel31.png
+2e8ac143b501364995937d5f57780b8c0cae77114b89837cf4560a71ed02f1ea  ./TROLLfx - VST - TROLLfx - VST - RTA/Plugin Skins/peak-ladder.png
+b4174f44a2c6f075225b2ec38b7135c5f615beaf16f8017c2fe48a8c714b36c4  ./TROLLfx - VST - TROLLfx - VST - RTA/Plugin Skins/sweep-clipping.png
+9dfa905551177f13ccd256218f39e9523e124cf90221bf279eff166a8c680fe5  ./TROLLfx - VST - TROLLfx - VST - RTA/Plugin Skins/sweep-graph-panel.png
+2f0a886d947ec1104c8f780a5c488cc5ed742a6f7e7b24c3e23151609e262bbb  ./TROLLfx - VST - TROLLfx - VST - RTA/Plugin Skins/sweep-graph-segments.png
+716f451949c017473599de5720e4d639bbbd20a53ed01529fc150df69c58e352  ./TROLLfx - VST - TROLLfx - VST - RTA/Plugin Skins/sweep-led-panel.png
+25bec540211ea7827f7e7f3ca80f22126d2de89500a49d81f7a834b7dd2f2b24  ./TROLLfx - VST - TROLLfx - VST - RTA/Service/PFFFT-LICENSE.txt
+300d55fcb541065a622812761a2d5dbefbae879692a397c3b962443c2ed90b55  ./TROLLfx - VST - TROLLfx - VST - RTA/Service/README.txt
+26047c2eb221acb7b72d18fab809228881dd5887cf6f80e91db4c97fcd9f3b87  ./TROLLfx - VST - TROLLfx - VST - RTA/Service/calibration/7033298.txt
+de4bc532c4e7296c98aaeae17c1ba05f5987fb7d8b6432d113a1f0957b0b41ac  ./TROLLfx - VST - TROLLfx - VST - RTA/Service/calibration/7033298_90deg.txt
+9a67dca94afc57063169e39b31e5f1163da4e5b3869b4fd15855f5ea057a9cf0  ./TROLLfx - VST - TROLLfx - VST - RTA/Service/trollfx-rta-v02-armv7
+871f4f0e22fdabef55ae54742c4903d5866aa3ea8eb315a0d43c04289b76d32b  ./TROLLfx - VST - TROLLfx - VST - RTA/Service/trollfx-sweep-cli-armv7
+ab958ebb720eb1df29eaae4c3b6b377a3ccb9370be3e907fbe44fa285c4b5ca9  ./TROLLfx - VST - TROLLfx - VST - RTA/THIRD_PARTY_NOTICES.txt
+f2638ecb980556dc4c8d0cd9eab7f7a9e3745e1dae5f8ad6690597e8276060f0  ./TROLLfx - VST - TROLLfx - VST - RTA/VST/trollfx-rta-arm32.so
+8687be52dbeccadd8381e88e1cd9241c3fbfb6acadcfc01430a49cc0e492b377  ./TROLLfx - VST - TROLLfx - VST - RTA/VST/trollfx-rta-arm64.so
+0be3c7e1ace7ea9afce477362aeb5f2dc7c909dfe6fbb23bbf3c652b02506e45  ./TROLLfx - VST - TROLLfx - VST - RTA/install-force-v054.sh
+9605c53b418e7faabf3baf9bb4754784030856e9af80a2459891cf9081a33d05  ./TROLLfx - VST - TROLLfx - VST - RTA/plugin.json
+d8845e979942b0bf8de57dd3d684d723633f6394f5e6595965eca5fa7cf2355d  ./TROLLfx - VST - TROLLfx - VST - RTA/rollback-force-v054.sh
+c6e46d49739e2fe72ec869568e55b78027cb16d81b09c37ee1e8c21d80f9fd86  ./TROLLfx - VST - TROLLfx - VST - RTA/verify-force-v054.sh
+14ccde17ac348494ef3364874b64ddac1fd7bc9a56a79efdcb96475c30be1aeb  ./TROLLfx - VST - TROLLfx - VST - RTA/version.xml
+0be3c7e1ace7ea9afce477362aeb5f2dc7c909dfe6fbb23bbf3c652b02506e45  ./install-force-v054.sh
+d8845e979942b0bf8de57dd3d684d723633f6394f5e6595965eca5fa7cf2355d  ./rollback-force-v054.sh
+c191ace826e45ea859369c2ff35b4043ed8f19a5dc748c2e1c54e46dfd05ff18  ./test-force-v054-package.sh
+6d37aab667348eae239c110c6596b58977effbecf13a6c95c98890bc6fdd2d34  ./v054-sweep-graph-layout-simulation.png
+82ccc8dc012ec83d1e1e106717b4c6b80a1081e510c68ff23b80128cf353177b  ./v054-sweep-led-layout-simulation.png
+c6e46d49739e2fe72ec869568e55b78027cb16d81b09c37ee1e8c21d80f9fd86  ./verify-force-v054.sh

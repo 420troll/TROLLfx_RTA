@@ -1,7 +1,7 @@
 {
   "name": "TROLLfx - VST - RTA",
   "manufacturer": "TROLLfx",
-  "version": "0.5.3",
+  "version": "0.5.4",
   "format": "vst2",
   "kind": "effect",
   "uid": "TfRA",
@@ -10,7 +10,7 @@
   "category": "Effect",
   "file32": "VST/trollfx-rta-arm32.so",
   "file64": "VST/trollfx-rta-arm64.so",
-  "description": "TROLLfx RTA with full-screen saved sweep LED and response graph pages, and reversible fractional-octave smoothing",
+  "description": "TROLLfx RTA with adjustable full-range sweep LED results and a 256-point continuous saved response graph",
   "author": "TROLLfx",
   "license": "MIT"
 }
