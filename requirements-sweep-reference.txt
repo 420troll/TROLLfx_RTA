@@ -1,0 +1,2 @@
+# Host-side numerical oracle only; never bundled into the Force runtime.
+pyfar==0.8.1

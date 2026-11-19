@@ -4203,6 +4203,1803 @@
       },
       {
         "version": 1,
+        "tabName": "SWEEP",
+        "fnKeyIndex": 4,
+        "fnKeySubIndex": 0,
+        "componentDefinition": {
+          "version": 2,
+          "actions": [],
+          "backgroundData": {
+            "version": 1,
+            "focussed": {
+              "version": 1,
+              "colour": "ff080405",
+              "image": ""
+            },
+            "unfocussed": {
+              "version": 1,
+              "colour": "ff080405",
+              "image": ""
+            }
+          },
+          "ignoreMousePresses": false,
+          "disableCoarseDataWheel": false,
+          "componentsData": [
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepLabel115",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "Regular",
+                      "height": 22.0
+                    },
+                    "colour": "ffff7777",
+                    "justification": "left verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Text",
+                  "handleName": "Invalid",
+                  "text": "GENERATE / START SWEEP"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "55 54 350 34"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepButton115",
+                "type": "Slider",
+                "data": {
+                  "version": 1,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 115"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "55 92 350 84"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepLabel116",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "Regular",
+                      "height": 22.0
+                    },
+                    "colour": "ffff7777",
+                    "justification": "left verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Text",
+                  "handleName": "Invalid",
+                  "text": "CANCEL / FADE OUT"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "455 54 350 34"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepButton116",
+                "type": "Slider",
+                "data": {
+                  "version": 1,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 116"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "455 92 350 84"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepStatusLabel",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "Regular",
+                      "height": 18.0
+                    },
+                    "colour": "ffff7777",
+                    "justification": "left verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Text",
+                  "handleName": "Invalid",
+                  "text": "MEASUREMENT STATUS"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "865 54 350 34"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepStatus",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "Regular",
+                      "height": 26.0
+                    },
+                    "colour": "ffff9b55",
+                    "justification": "left verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Value",
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 117"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "865 92 350 84"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepParamLabel0",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "Regular",
+                      "height": 20.0
+                    },
+                    "colour": "ffff7777",
+                    "justification": "left verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Text",
+                  "handleName": "Invalid",
+                  "text": "DURATION (s)"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "55 205 520 32"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepParam0",
+                "type": "Slider",
+                "data": {
+                  "version": 1,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 118"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "55 243 520 78"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepParamLabel1",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "Regular",
+                      "height": 20.0
+                    },
+                    "colour": "ffff7777",
+                    "justification": "left verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Text",
+                  "handleName": "Invalid",
+                  "text": "START FREQUENCY (Hz)"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "655 205 520 32"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepParam1",
+                "type": "Slider",
+                "data": {
+                  "version": 1,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 119"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "655 243 520 78"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepParamLabel2",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "Regular",
+                      "height": 20.0
+                    },
+                    "colour": "ffff7777",
+                    "justification": "left verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Text",
+                  "handleName": "Invalid",
+                  "text": "STOP FREQUENCY (Hz)"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "55 330 520 32"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepParam2",
+                "type": "Slider",
+                "data": {
+                  "version": 1,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 120"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "55 368 520 78"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepParamLabel3",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "Regular",
+                      "height": 20.0
+                    },
+                    "colour": "ffff7777",
+                    "justification": "left verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Text",
+                  "handleName": "Invalid",
+                  "text": "SAFE PEAK LEVEL (dBFS)"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "655 330 520 32"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepParam3",
+                "type": "Slider",
+                "data": {
+                  "version": 1,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 121"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "655 368 520 78"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepOutputLabel122",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "Regular",
+                      "height": 19.0
+                    },
+                    "colour": "ffff7777",
+                    "justification": "left verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Text",
+                  "handleName": "Invalid",
+                  "text": "RESPONSE SMOOTHING"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "55 468 550 30"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepOutputControl122",
+                "type": "Slider",
+                "data": {
+                  "version": 1,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 122"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "55 501 550 54"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepOutputLabel123",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "Regular",
+                      "height": 19.0
+                    },
+                    "colour": "ffff7777",
+                    "justification": "left verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Text",
+                  "handleName": "Invalid",
+                  "text": "SAVED MEASUREMENT"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "655 468 550 30"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepOutputControl123",
+                "type": "Slider",
+                "data": {
+                  "version": 1,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 123"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "655 501 550 54"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweepNote",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "Regular",
+                      "height": 15.0
+                    },
+                    "colour": "ffbb7777",
+                    "justification": "left verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Text",
+                  "handleName": "Invalid",
+                  "text": "Changes re-render the selected saved session; they do not replay or record a sweep. Results remain under Service/sessions."
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "55 574 1160 34"
+              }
+            }
+          ]
+        },
+        "qlinkBoundsData": []
+      },
+      {
+        "version": 1,
+        "tabName": "SWEEP RESULTS",
+        "fnKeyIndex": 5,
+        "fnKeySubIndex": 0,
+        "componentDefinition": {
+          "version": 2,
+          "actions": [],
+          "backgroundData": {
+            "version": 1,
+            "focussed": {
+              "version": 1,
+              "colour": "ff080405",
+              "image": ""
+            },
+            "unfocussed": {
+              "version": 1,
+              "colour": "ff080405",
+              "image": ""
+            }
+          },
+          "ignoreMousePresses": false,
+          "disableCoarseDataWheel": false,
+          "componentsData": [
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBackground",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "Regular",
+                  "colour": "0",
+                  "image": "response-panel.png"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "0 0 1280 628"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand0",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 124"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "29 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand1",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 125"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "69 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand2",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 126"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "109 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand3",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 127"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "149 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand4",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 128"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "189 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand5",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 129"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "229 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand6",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 130"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "269 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand7",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 131"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "309 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand8",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 132"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "349 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand9",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 133"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "389 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand10",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 134"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "429 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand11",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 135"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "469 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand12",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 136"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "509 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand13",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 137"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "549 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand14",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 138"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "589 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand15",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 139"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "629 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand16",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 140"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "669 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand17",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 141"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "709 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand18",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 142"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "749 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand19",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 143"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "789 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand20",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 144"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "829 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand21",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 145"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "869 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand22",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 146"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "909 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand23",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 147"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "949 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand24",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 148"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "989 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand25",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 149"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1029 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand26",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 150"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1069 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand27",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 151"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1109 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand28",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 152"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1149 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand29",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 153"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1189 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseBand30",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "FilmStrip",
+                  "colour": "0",
+                  "image": "led-ladder.png",
+                  "numFrames": 25,
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 154"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "1229 78 22 430"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "responseSmoothingLabel",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "Regular",
+                      "height": 18.0
+                    },
+                    "colour": "ffff7777",
+                    "justification": "left verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Text",
+                  "handleName": "Invalid",
+                  "text": "Select smoothing on SWEEP page \u00b7 graph is relative to 1 kHz"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "55 570 1160 36"
+              }
+            }
+          ]
+        },
+        "qlinkBoundsData": []
+      },
+      {
+        "version": 1,
         "tabName": "LEVEL",
         "fnKeyIndex": 3,
         "fnKeySubIndex": 0,

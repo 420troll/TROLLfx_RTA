@@ -103,6 +103,28 @@ def main():
         if idx==114: control_entries.append(label_entry("serviceStatus",idx,x,y+30,278,58,size=22,color="ffff9b55"))
         else: control_entries.append(entry("serviceControl"+str(slot),"Slider",{"version":1,"handleName":"Data"},f"{x} {y+30} 278 58",idx,"Yes"))
     tabs.append(tab("DISPLAY",2,control_entries))
+    sweep_entries=[]
+    for idx,label,x in [(115,"GENERATE / START SWEEP",55),(116,"CANCEL / FADE OUT",455)]:
+        sweep_entries.append(entry("sweepLabel"+str(idx),"Label",{"version":1,"textStyle":text_style(22,"ffff7777"),"type":"Text","handleName":"Invalid","text":label},f"{x} 54 350 34"))
+        sweep_entries.append(entry("sweepButton"+str(idx),"Slider",{"version":1,"handleName":"Data"},f"{x} 92 350 84",idx,"Yes"))
+    sweep_entries.append(entry("sweepStatusLabel","Label",{"version":1,"textStyle":text_style(18,"ffff7777"),"type":"Text","handleName":"Invalid","text":"MEASUREMENT STATUS"},"865 54 350 34"))
+    sweep_entries.append(label_entry("sweepStatus",117,865,92,350,84,size=26,color="ffff9b55"))
+    for slot,(idx,label) in enumerate([(118,"DURATION (s)"),(119,"START FREQUENCY (Hz)"),(120,"STOP FREQUENCY (Hz)"),(121,"SAFE PEAK LEVEL (dBFS)")]):
+        col=slot%2;row=slot//2;x=55+col*600;y=205+row*125
+        sweep_entries.append(entry("sweepParamLabel"+str(slot),"Label",{"version":1,"textStyle":text_style(20,"ffff7777"),"type":"Text","handleName":"Invalid","text":label},f"{x} {y} 520 32"))
+        sweep_entries.append(entry("sweepParam"+str(slot),"Slider",{"version":1,"handleName":"Data"},f"{x} {y+38} 520 78",idx,"Yes"))
+    for idx,label,x in [(122,"RESPONSE SMOOTHING",55),(123,"SAVED MEASUREMENT",655)]:
+        sweep_entries.append(entry("sweepOutputLabel"+str(idx),"Label",{"version":1,"textStyle":text_style(19,"ffff7777"),"type":"Text","handleName":"Invalid","text":label},f"{x} 468 550 30"))
+        sweep_entries.append(entry("sweepOutputControl"+str(idx),"Slider",{"version":1,"handleName":"Data"},f"{x} 501 550 54",idx,"Yes"))
+    sweep_entries.append(entry("sweepNote","Label",{"version":1,"textStyle":text_style(15,"ffbb7777"),"type":"Text","handleName":"Invalid","text":"Changes re-render the selected saved session; they do not replay or record a sweep. Results remain under Service/sessions."},"55 574 1160 34"))
+    tabs.append(tab("SWEEP",4,sweep_entries))
+    response_centers=["20","25","31","40","50","63","80","100","125","160","200","250","315","400","500","630","800","1k","1k2","1k6","2k","2k5","3k1","4k","5k","6k3","8k","10k","12k","16k","20k"]
+    panel("response-panel.png",response_centers,"SWEEP RESULTS  /  RELATIVE TO 1 kHz")
+    response_entries=[entry("responseBackground","Image",{"version":2,"imageType":"Regular","colour":"0","image":"response-panel.png"},"0 0 1280 628")]
+    gap=1240/31;width=max(16,int(gap*.56));start=20+(gap-width)/2
+    for i in range(31):response_entries.append(image_entry("responseBand"+str(i),124+i,"led-ladder.png",int(start+i*gap),y=78,w=width,h=430))
+    response_entries.append(entry("responseSmoothingLabel","Label",{"version":1,"textStyle":text_style(18,"ffff7777"),"type":"Text","handleName":"Invalid","text":"Select smoothing on SWEEP page · graph is relative to 1 kHz"},"55 570 1160 36"))
+    tabs.append(tab("SWEEP RESULTS",5,response_entries))
     level_entries=[]
     bg=Image.new("RGBA",(1280,628),(8,4,5,255)); d=ImageDraw.Draw(bg)
     d.rectangle((0,0,1279,61),fill=(18,5,7,255));d.line((0,61,1279,61),fill=(115,24,31,255),width=2)
@@ -119,6 +141,9 @@ def main():
         if t==2:
             for n in range(1,11): assignments[f"Q-Link {n}"]=100+n
             assignments["Q-Link 11"]=111; assignments["Q-Link 12"]=112; assignments["Q-Link 13"]=113
+        if t==4:
+            for n,idx in enumerate((118,119,120,121),1): assignments[f"Q-Link {n}"]=idx
+            assignments["Q-Link 5"]=122; assignments["Q-Link 6"]=123
         qlinks.append({"Tab":t+1,"SubTab":1,"Bank Direction":"Column","Q-Links":assignments})
     q={"version":4,"info":{"version":1,"type":"CompleteDescription"},"Screen Mode Q-Links":{"version":4,"map":qlinks},"Program Mode Q-Links":{f"Q-Link {n}":-1 for n in range(1,17)}}
     with open(os.path.join(ROOT,"Q-Links.json"),"w") as f: json.dump(q,f,indent=2)
