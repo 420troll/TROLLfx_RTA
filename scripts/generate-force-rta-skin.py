@@ -50,31 +50,38 @@ def panel(filename, centers, title):
     d.text((24,595),"CORRECTED BAND LEVEL  ·  DISPLAY GAIN / FLOOR APPLY TO LEDS ONLY",font=font(15),fill=(132,63,66,255))
     im.save(os.path.join(ROOT,filename))
 
-def response_panel(filename):
+def response_panel(filename, mode):
     im=Image.new("RGBA",(1280,628),(8,4,5,255)); d=ImageDraw.Draw(im)
-    d.rectangle((0,0,1279,61),fill=(18,5,7,255));d.line((0,61,1279,61),fill=(115,24,31,255),width=2)
-    d.text((24,13),"TROLLfx / RTA  ·  V0.5.2  ·  BUILD 502",font=font(24,True),fill=(255,75,76,255))
-    d.text((860,21),"SWEEP RESULTS  /  SAVED RESPONSE",font=font(16,True),fill=(196,88,85,255))
-    x0,x1,y0,y1=82,1260,77,300
-    d.rectangle((x0,y0,x1,y1),fill=(10,5,6,255),outline=(91,22,27,255),width=2)
-    def xfreq(hz): return x0+(math.log(hz/20.0)/math.log(1000.0))*(x1-x0)
-    for db in (6,0,-6,-12,-18,-24,-30):
-        y=y0+(6-db)/36.0*(y1-y0)
-        d.line((x0,y,x1,y),fill=(104,38,43,255) if db==0 else (57,24,28,255),width=2 if db==0 else 1)
-        d.text((74,y),f"{db:+d}",font=font(12,True),fill=(201,126,126,255),anchor="rm")
-    d.text((20,76),"dB",font=font(12,True),fill=(201,126,126,255))
-    for hz,label in [(20,"20"),(31.5,"31"),(50,"50"),(100,"100"),(200,"200"),(500,"500"),(1000,"1k"),(2000,"2k"),(5000,"5k"),(10000,"10k"),(20000,"20k")]:
-        x=xfreq(hz);d.line((x,y0,x,y1),fill=(47,22,25,255),width=1)
-        d.text((x,306),label,font=font(12,True),fill=(218,150,150,255),anchor="mt")
-    d.text((24,340),"31-BAND RESPONSE  ·  -30 TO +6 dB REL. 1 kHz",font=font(15,True),fill=(202,91,91,255))
-    d.line((570,348,598,348),fill=(133,59,63,255),width=2);d.text((604,340),"RAW",font=font(12,True),fill=(177,111,111,255))
-    d.line((660,348,690,348),fill=(255,38,51,255),width=3);d.text((697,340),"SMOOTHED",font=font(12,True),fill=(220,128,128,255))
-    d.rectangle((15,363,1265,476),fill=(10,5,6,255),outline=(91,22,27,255),width=1)
-    d.line((20,475,1260,475),fill=(82,22,26,255),width=1)
-    centers=["20","25","31","40","50","63","80","100","125","160","200","250","315","400","500","630","800","1k","1k2","1k6","2k","2k5","3k1","4k","5k","6k3","8k","10k","12k","16k","20k"]
-    gap=1240/len(centers);width=22;start=20+(gap-width)/2
-    for i,label in enumerate(centers):
-        x=int(start+i*gap+width/2);d.text((x,481),label,font=font(10,True),fill=(200,130,130,255),anchor="mt")
+    d.rectangle((0,0,1279,47),fill=(18,5,7,255));d.line((0,47,1279,47),fill=(115,24,31,255),width=2)
+    d.text((22,9),"TROLLfx / RTA  ·  V0.5.3  ·  BUILD 503",font=font(22,True),fill=(255,75,76,255))
+    d.text((708,14),mode,font=font(17,True),fill=(220,108,104,255))
+    if mode == "SWEEP LED RESULTS":
+        d.rectangle((26,57,1008,477),fill=(10,5,6,255),outline=(91,22,27,255),width=2)
+        d.line((30,465,1004,465),fill=(100,32,37,255),width=1)
+        centers=["20","25","31","40","50","63","80","100","125","160","200","250","315","400","500","630","800","1k","1k2","1k6","2k","2k5","3k1","4k","5k","6k3","8k","10k","12k","16k","20k"]
+        gap=974/31; width=22; start=30+(gap-width)/2
+        for i,label in enumerate(centers):
+            x=start+i*gap+width/2
+            d.text((x,481),label,font=font(12,True),fill=(239,154,151,255),anchor="mt")
+            if i%2==0:d.line((x,466,x,472),fill=(130,51,55,255),width=1)
+        d.text((27,513),"SAVED RESPONSE  ·  24 SEGMENTS  ·  RELATIVE TO 1 kHz",font=font(15,True),fill=(199,89,91,255))
+    else:
+        x0,x1,y0,y1=84,1005,69,479
+        d.rectangle((x0,y0,x1,y1),fill=(10,5,6,255),outline=(91,22,27,255),width=2)
+        def xfreq(hz): return x0+(math.log(hz/20.0)/math.log(1000.0))*(x1-x0)
+        for db in (6,0,-6,-12,-18,-24,-30):
+            y=y0+(6-db)/36.0*(y1-y0)
+            d.line((x0,y,x1,y),fill=(128,43,49,255) if db==0 else (64,27,31,255),width=2 if db==0 else 1)
+            d.text((77,y),f"{db:+d}",font=font(14,True),fill=(237,153,150,255),anchor="rm")
+        d.text((26,49),"dB rel. 1 kHz",font=font(13,True),fill=(226,140,140,255))
+        for hz,label in [(20,"20"),(31.5,"31.5"),(50,"50"),(100,"100"),(200,"200"),(500,"500"),(1000,"1k"),(2000,"2k"),(5000,"5k"),(10000,"10k"),(20000,"20k")]:
+            x=xfreq(hz);d.line((x,y0,x,y1),fill=(52,25,28,255),width=1)
+            d.text((x,487),label,font=font(14,True),fill=(248,173,169,255),anchor="mt")
+        d.text((27,519),"SMOOTHED RESPONSE  ·  LEVEL RELATIVE TO 1 kHz",font=font(13,True),fill=(219,100,101,255))
+    d.rectangle((18,548,1008,622),fill=(16,7,8,255),outline=(81,25,29,255),width=1)
+    d.text((32,552),"SMOOTHING",font=font(13,True),fill=(210,107,106,255))
+    d.text((514,552),"SAVED MEASUREMENT",font=font(13,True),fill=(210,107,106,255))
+    d.text((32,596),"Display is static; updates on capture, selection or smoothing.",font=font(12),fill=(151,96,96,255))
     im.save(os.path.join(ROOT,filename))
 
 def entry(name, typ, data, bounds, handle=None, focus="No"):
@@ -108,8 +115,8 @@ def root(entries):
     return {"version":2,"actions":[],"backgroundData":{"version":1,"focussed":{"version":1,"colour":"ff080405","image":""},"unfocussed":{"version":1,"colour":"ff080405","image":""}},
             "ignoreMousePresses":False,"disableCoarseDataWheel":False,"componentsData":entries}
 
-def tab(name, idx, entries):
-    return {"version":1,"tabName":name,"fnKeyIndex":idx,"fnKeySubIndex":0,"componentDefinition":root(entries),"qlinkBoundsData":[]}
+def tab(name, idx, entries, sub=0):
+    return {"version":1,"tabName":name,"fnKeyIndex":idx,"fnKeySubIndex":sub,"componentDefinition":root(entries),"qlinkBoundsData":[]}
 
 def main():
     ladder("led-ladder.png"); ladder("peak-ladder.png",True)
@@ -154,25 +161,40 @@ def main():
         sweep_entries.append(entry("sweepOutputControl"+str(idx),"Slider",{"version":1,"handleName":"Data"},f"{x} 501 550 54",idx,"Yes"))
     sweep_entries.append(entry("sweepNote","Label",{"version":1,"textStyle":text_style(15,"ffbb7777"),"type":"Text","handleName":"Invalid","text":"Changes re-render the selected saved session; they do not replay or record a sweep. Results remain under Service/sessions."},"55 574 1160 34"))
     tabs.append(tab("SWEEP",4,sweep_entries))
-    response_centers=["20","25","31","40","50","63","80","100","125","160","200","250","315","400","500","630","800","1k","1k2","1k6","2k","2k5","3k1","4k","5k","6k3","8k","10k","12k","16k","20k"]
-    response_panel("response-panel.png")
-    response_entries=[entry("responseBackground","Image",{"version":2,"imageType":"Regular","colour":"0","image":"response-panel.png"},"0 0 1280 628")]
+    response_panel("sweep-led-panel.png","SWEEP LED RESULTS")
+    led_result_entries=[entry("sweepLedBackground","Image",{"version":2,"imageType":"Regular","colour":"0","image":"sweep-led-panel.png"},"0 0 1280 628")]
+    gap=974/31;width=22;start=30+(gap-width)/2
+    for i in range(31):
+        x=int(start+i*gap)
+        led_result_entries.append(image_entry("sweepLedBand"+str(i),124+i,"led-ladder.png",x,y=63,w=width,h=402))
+        led_result_entries.append(image_entry("sweepLedPeak"+str(i),218+i,"peak-ladder.png",x,y=63,w=width,h=402))
+    led_result_entries.append(label_entry("ledResultStatus",217,760,512,235,20,size=15,color="ffff9b55"))
+    led_result_entries.append(label_entry("ledSweepDiagnostic",249,760,529,235,16,size=11,color="ffff7777"))
+    for idx,label,x in [(122,"SMOOTHING",30),(123,"SAVED MEASUREMENT",512)]:
+        led_result_entries.append(entry("ledResultLabel"+str(idx),"Label",{"version":1,"textStyle":text_style(13,"ffff7777"),"type":"Text","handleName":"Invalid","text":label},f"{x} 551 450 22"))
+        led_result_entries.append(entry("ledResultControl"+str(idx),"Slider",{"version":1,"handleName":"Data"},f"{x} 574 450 42",idx,"Yes"))
+    tabs.append(tab("SWEEP LED RESULTS",5,led_result_entries))
+
+    response_panel("sweep-graph-panel.png","SWEEP GRAPH")
+    graph_entries=[entry("sweepGraphBackground","Image",{"version":2,"imageType":"Regular","colour":"0","image":"sweep-graph-panel.png"},"0 0 1280 628")]
     centers_hz=[20,25,31.5,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000]
-    graph_x0,graph_x1,graph_y0,graph_y1=82,1260,77,300
+    graph_x0,graph_x1,graph_y0,graph_y1=84,1005,69,479
     def freq_x(hz): return graph_x0+math.log(hz/20.0)/math.log(1000.0)*(graph_x1-graph_x0)
+    graph_gap=(graph_x1-graph_x0)/30.0
+    bar_width=min(27.0,graph_gap-2.0)
+    # Slider ColourBar is documented as a well-trodden dynamic parameter view;
+    # a bound 25-frame image supplies the bright red point/peak at the bar top.
     for i,hz in enumerate(centers_hz):
-        left=graph_x0 if i==0 else freq_x(math.sqrt(centers_hz[i-1]*hz))
-        right=graph_x1 if i==30 else freq_x(math.sqrt(hz*centers_hz[i+1]))
-        bounds=f"{left:.2f} {graph_y0} {right-left:.2f} {graph_y1-graph_y0}"
-        response_entries.append(plotter_entry(f"rawTrace{i}",186+i,"ff853b3f",1.1,bounds))
-        response_entries.append(plotter_entry(f"smoothTrace{i}",155+i,"ffff2633",2.4,bounds))
-    gap=1240/31;width=22;start=20+(gap-width)/2
-    for i in range(31):response_entries.append(image_entry("responseBand"+str(i),124+i,"led-ladder.png",int(start+i*gap),y=365,w=width,h=108))
-    response_entries.append(label_entry("resultStatus",217,875,336,360,28,size=18,color="ffff9b55"))
-    for idx,label,x in [(122,"SMOOTHING",55),(123,"SAVED MEASUREMENT",655)]:
-        response_entries.append(entry("resultControlLabel"+str(idx),"Label",{"version":1,"textStyle":text_style(15,"ffff7777"),"type":"Text","handleName":"Invalid","text":label},f"{x} 516 520 24"))
-        response_entries.append(entry("resultControl"+str(idx),"Slider",{"version":1,"handleName":"Data"},f"{x} 541 520 56",idx,"Yes"))
-    tabs.append(tab("SWEEP RESULTS",5,response_entries))
+        cx=freq_x(hz);bounds=f"{cx-bar_width/2:.2f} {graph_y0} {bar_width:.2f} {graph_y1-graph_y0}"
+        data={"version":2,"sliderType":"ColourBar","direction":"Vertical","backgroundColour":"ff210b0e","outlineColour":"ff592127","valueColour":"aaff2633","isBipolar":False,"handleName":"Data"}
+        graph_entries.append(entry(f"graphFill{i}","Slider",data,bounds,155+i,"No"))
+        graph_entries.append(image_entry(f"graphTracePoint{i}",218+i,"peak-ladder.png",int(round(cx-bar_width/2)),y=graph_y0,w=int(round(bar_width)),h=graph_y1-graph_y0))
+    graph_entries.append(label_entry("graphResultStatus",217,760,512,235,20,size=15,color="ffff9b55"))
+    graph_entries.append(label_entry("graphSweepDiagnostic",249,760,529,235,16,size=11,color="ffff7777"))
+    for idx,label,x in [(122,"SMOOTHING",30),(123,"SAVED MEASUREMENT",512)]:
+        graph_entries.append(entry("graphResultLabel"+str(idx),"Label",{"version":1,"textStyle":text_style(13,"ffff7777"),"type":"Text","handleName":"Invalid","text":label},f"{x} 551 450 22"))
+        graph_entries.append(entry("graphResultControl"+str(idx),"Slider",{"version":1,"handleName":"Data"},f"{x} 574 450 42",idx,"Yes"))
+    tabs.append(tab("SWEEP GRAPH",5,graph_entries,1))
     level_entries=[]
     bg=Image.new("RGBA",(1280,628),(8,4,5,255)); d=ImageDraw.Draw(bg)
     d.rectangle((0,0,1279,61),fill=(18,5,7,255));d.line((0,61,1279,61),fill=(115,24,31,255),width=2)
@@ -184,7 +206,7 @@ def main():
     tui={"pageData":{"version":1,"componentDefinitions":{"version":2,"importFiles":[],"localComponentDefinitions":[]},"replacementStrings":[],"info":{"version":1,"type":"CompleteDescription"},"tabs":tabs}}
     with open(os.path.join(ROOT,"TUI.json"),"w") as f: json.dump(tui,f,indent=2)
     qlinks=[]
-    for t in range(len(tabs)):
+    for t, tab_data in enumerate(tabs):
         assignments={f"Q-Link {n}":-1 for n in range(1,17)}
         if t==2:
             for n in range(1,11): assignments[f"Q-Link {n}"]=100+n
@@ -192,9 +214,9 @@ def main():
         if t==4:
             for n,idx in enumerate((118,119,120,121),1): assignments[f"Q-Link {n}"]=idx
             assignments["Q-Link 5"]=122; assignments["Q-Link 6"]=123
-        if t==5:
+        if t in (5,6):
             assignments["Q-Link 5"]=122; assignments["Q-Link 6"]=123
-        qlinks.append({"Tab":t+1,"SubTab":1,"Bank Direction":"Column","Q-Links":assignments})
+        qlinks.append({"Tab":tab_data["fnKeyIndex"]+1,"SubTab":tab_data["fnKeySubIndex"]+1,"Bank Direction":"Column","Q-Links":assignments})
     q={"version":4,"info":{"version":1,"type":"CompleteDescription"},"Screen Mode Q-Links":{"version":4,"map":qlinks},"Program Mode Q-Links":{f"Q-Link {n}":-1 for n in range(1,17)}}
     with open(os.path.join(ROOT,"Q-Links.json"),"w") as f: json.dump(q,f,indent=2)
     print("Generated MPC TUI/Q-Link skins and 25-frame red LED assets in",ROOT)

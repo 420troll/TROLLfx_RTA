@@ -92,6 +92,24 @@ int main(){
     for(std::size_t i=1;i<longRoundTrip.frequencyHz.size();i++)assert(longRoundTrip.frequencyHz[i]>longRoundTrip.frequencyHz[i-1]);
     assert(std::filesystem::exists(precisionDir/"frequency-response-smoothed.csv")&&std::filesystem::exists(precisionDir/"frequency-response.svg"));
     std::filesystem::remove_all(precisionDir);
+    // Repair old V0.5.2 default-precision CSVs from the preserved impulse WAV
+    // and sweep metadata. Raw files are read-only during recovery.
+    const auto legacyDir=std::filesystem::temp_directory_path()/"trollfx-sweep-legacy-axis-test";std::filesystem::remove_all(legacyDir);std::filesystem::create_directories(legacyDir);
+    std::vector<double> legacyImpulse(longFftSize,0.0),tinyWav{0.0,0.125};
+    assert(writeFloatWav((legacyDir/"impulse.wav").string(),legacyImpulse,longSampleRate,&error));
+    assert(writeFloatWav((legacyDir/"capture.wav").string(),tinyWav,longSampleRate,&error));
+    assert(writeFloatWav((legacyDir/"reference.wav").string(),tinyWav,longSampleRate,&error));
+    {std::ofstream metadata(legacyDir/"measurement.json");metadata<<"{\"sample_rate_hz\":48000,\"start_hz\":19800,\"stop_hz\":20000,\"clipped_samples\":0}\n";}
+    {std::ofstream csv(legacyDir/"frequency-response.csv");csv<<"frequency_hz,magnitude,gain_db,phase_rad\n";for(std::size_t k=0;k<longFftSize;k++){const double hz=static_cast<double>(k)*longSampleRate/longFftSize;if(hz<19800||hz>20000)continue;csv<<hz<<",0.5,-6.020599913279624,0.25\n";}}
+    auto contents=[](const std::filesystem::path& p){std::ifstream f(p,std::ios::binary);return std::string((std::istreambuf_iterator<char>(f)),{});};
+    const auto rawCsvBefore=contents(legacyDir/"frequency-response.csv"),metadataBefore=contents(legacyDir/"measurement.json"),captureBefore=contents(legacyDir/"capture.wav"),referenceBefore=contents(legacyDir/"reference.wav"),impulseBefore=contents(legacyDir/"impulse.wav");
+    ResponseCurve repaired;assert(readResponseCsv((legacyDir/"frequency-response.csv").string(),repaired,&error));assert(repaired.frequencyAxisReconstructed&&repaired.frequencyHz.size()>4000);
+    bool repairedDuplicate=false;for(std::size_t i=1;i<repaired.frequencyHz.size();i++){assert(repaired.frequencyHz[i]>repaired.frequencyHz[i-1]);if(std::abs(repaired.frequencyHz[i]-repaired.frequencyHz[i-1])<1e-9)repairedDuplicate=true;}assert(!repairedDuplicate);
+    assert(reprocessSession(legacyDir.string(),6,1000,true,&error));
+    assert(contents(legacyDir/"frequency-response.csv")==rawCsvBefore&&contents(legacyDir/"measurement.json")==metadataBefore);
+    assert(contents(legacyDir/"capture.wav")==captureBefore&&contents(legacyDir/"reference.wav")==referenceBefore&&contents(legacyDir/"impulse.wav")==impulseBefore);
+    assert(std::filesystem::exists(legacyDir/"frequency-response-smoothed.csv")&&std::filesystem::exists(legacyDir/"frequency-response.svg"));
+    std::filesystem::remove_all(legacyDir);
     // Fractional-octave smoothing is magnitude-domain and log-frequency based.
     std::vector<double> freq,flatMag,peakMag;for(int i=0;i<=1200;i++){double hz=20*std::pow(1000.0,i/1200.0);freq.push_back(hz);flatMag.push_back(0.5);double z=std::log2(hz/1000.0);peakMag.push_back(0.5+2.0*std::exp(-0.5*(z/.018)*(z/.018)));}
     std::vector<double> sm;assert(fractionalOctaveSmooth(freq,flatMag,6,sm,&error));for(double v:sm)assert(std::abs(v-.5)<1e-10);
