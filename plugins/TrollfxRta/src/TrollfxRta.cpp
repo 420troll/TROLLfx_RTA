@@ -134,6 +134,7 @@ private:
     int lockFd_ = -1;
     std::chrono::steady_clock::time_point childStartedAt_{};
     std::string executable_;
+    std::string temporaryExecutable_;
     std::atomic<int> autoSuppressed_{0};
 };
 
@@ -449,6 +450,16 @@ void SharedClient::run() {
     if (const char* setting=std::getenv("TROLLFX_RTA_REFRESH_HZ")) { char* end=nullptr; long n=std::strtol(setting,&end,10); if(end!=setting&&n>=1&&n<=10)refreshHz=static_cast<int>(n); }
     unsigned failedStarts=0; auto retryAt=std::chrono::steady_clock::time_point{};
     bool external=false, manualStart=false; int mode=-1;
+    auto cleanupTemporaryExecutable=[this]() { if(!temporaryExecutable_.empty()){unlink(temporaryExecutable_.c_str());temporaryExecutable_.clear();} executable_.clear(); };
+    auto copyExecutableToTmp=[this](const std::string& source) -> bool {
+        int input=open(source.c_str(),O_RDONLY|O_CLOEXEC);if(input<0)return false;
+        struct stat st{};if(fstat(input,&st)!=0||!S_ISREG(st.st_mode)||(st.st_mode&(S_IXUSR|S_IXGRP|S_IXOTH))==0){close(input);return false;}
+        char path[]="/tmp/trollfx-rta-v02-armv7-XXXXXX";int output=mkstemp(path);if(output<0){close(input);return false;}
+        bool ok=fchmod(output,0700)==0;char buffer[16384];
+        while(ok){const ssize_t n=read(input,buffer,sizeof(buffer));if(n==0)break;if(n<0){if(errno==EINTR)continue;ok=false;break;}ssize_t written=0;while(written<n){const ssize_t w=write(output,buffer+written,static_cast<size_t>(n-written));if(w<0&&errno==EINTR)continue;if(w<=0){ok=false;break;}written+=w;}}
+        if(ok&&fsync(output)!=0)ok=false;close(input);if(close(output)!=0)ok=false;
+        if(!ok){unlink(path);return false;}temporaryExecutable_=path;executable_=path;return true;
+    };
     auto bundledExecutable=[]() -> std::string {
         if (const char* overridePath=std::getenv("TROLLFX_RTA_SERVICE_EXECUTABLE")) return overridePath;
         Dl_info info{}; if (!dladdr(reinterpret_cast<void*>(&servicePathAnchor),&info) || !info.dli_fname) return {};
@@ -468,30 +479,31 @@ void SharedClient::run() {
     };
     bool lockBusy=false;
     auto releaseLock=[this]() { if(lockFd_>=0){flock(lockFd_,LOCK_UN);close(lockFd_);lockFd_=-1;} };
-    auto launch=[this,&bundledExecutable,&lockBusy,&releaseLock]() -> bool {
+    auto launch=[this,&bundledExecutable,&lockBusy,&releaseLock,&cleanupTemporaryExecutable,&copyExecutableToTmp]() -> bool {
         const char* lockPath=std::getenv("TROLLFX_RTA_LOCK_PATH"); if(!lockPath)lockPath="/tmp/trollfx-rta-v04.lock";
         lockFd_=open(lockPath,O_RDWR|O_CREAT|O_CLOEXEC,0600);
         if(lockFd_<0 || flock(lockFd_,LOCK_EX|LOCK_NB)!=0) { if(lockFd_>=0)close(lockFd_);lockFd_=-1;lockBusy=true;return false; }
-        executable_=bundledExecutable(); if(executable_.empty() || access(executable_.c_str(),X_OK)!=0){releaseLock();return false;}
-        const std::string dir=executable_.substr(0,executable_.find_last_of('/'));
+        const std::string sourceExecutable=bundledExecutable();if(sourceExecutable.empty()||access(sourceExecutable.c_str(),R_OK)!=0){releaseLock();return false;}
+        const std::string dir=sourceExecutable.substr(0,sourceExecutable.find_last_of('/'));
+        if(!copyExecutableToTmp(sourceExecutable)){cleanupTemporaryExecutable();releaseLock();return false;}
         const std::string c0=dir+"/calibration/7033298.txt",c90=dir+"/calibration/7033298_90deg.txt";
         const char* port="8096"; if(const char* configured=std::getenv("TROLLFX_RTA_PORT"))port=configured;
-        posix_spawn_file_actions_t actions; if(posix_spawn_file_actions_init(&actions)!=0){releaseLock();return false;}
+        posix_spawn_file_actions_t actions; if(posix_spawn_file_actions_init(&actions)!=0){cleanupTemporaryExecutable();releaseLock();return false;}
         posix_spawn_file_actions_addopen(&actions,STDOUT_FILENO,"/tmp/trollfx-rta-v04.log",O_WRONLY|O_CREAT|O_APPEND,0600);
         posix_spawn_file_actions_adddup2(&actions,STDOUT_FILENO,STDERR_FILENO);
         char* const argv[]={const_cast<char*>(executable_.c_str()),const_cast<char*>("--device"),const_cast<char*>("hw:U18dB,0"),const_cast<char*>("--port"),const_cast<char*>(port),const_cast<char*>("--cal-0"),const_cast<char*>(c0.c_str()),const_cast<char*>("--cal-90"),const_cast<char*>(c90.c_str()),const_cast<char*>("--orientation"),const_cast<char*>("0"),nullptr};
         pid_t pid=-1; const int spawnResult=posix_spawn(&pid,executable_.c_str(),&actions,nullptr,argv,environ);
-        posix_spawn_file_actions_destroy(&actions); if(spawnResult!=0){releaseLock();return false;}
+        posix_spawn_file_actions_destroy(&actions); if(spawnResult!=0){cleanupTemporaryExecutable();releaseLock();return false;}
         childPid_=pid; childStartedAt_=std::chrono::steady_clock::now(); return true;
     };
     auto stopOwned=[&]() {
-        if(childPid_<=0){releaseLock();return;}
+        if(childPid_<=0){releaseLock();cleanupTemporaryExecutable();return;}
         serviceState_.store(SERVICE_STOPPING,std::memory_order_release);
         if(childMatches())kill(childPid_,SIGTERM);
         const auto until=std::chrono::steady_clock::now()+std::chrono::seconds(2); int status=0;
-        while(std::chrono::steady_clock::now()<until) { pid_t r=waitpid(childPid_,&status,WNOHANG); if(r==childPid_){childPid_=-1;releaseLock();return;} std::this_thread::sleep_for(std::chrono::milliseconds(50)); }
+        while(std::chrono::steady_clock::now()<until) { pid_t r=waitpid(childPid_,&status,WNOHANG); if(r==childPid_){childPid_=-1;releaseLock();cleanupTemporaryExecutable();return;} std::this_thread::sleep_for(std::chrono::milliseconds(50)); }
         if(childMatches())kill(childPid_,SIGKILL);
-        waitpid(childPid_,&status,0); childPid_=-1;releaseLock();
+        waitpid(childPid_,&status,0); childPid_=-1;releaseLock();cleanupTemporaryExecutable();
     };
     while (!stop_.load(std::memory_order_acquire)) {
         lock.unlock();
@@ -508,13 +520,13 @@ void SharedClient::run() {
         const bool apiAvailable=request("/api/spectrum","GET",probeBody) && trollfx::parseSpectrumJson(probeBody,probe);
         if(childPid_>0) {
             int childStatus=0; const pid_t ended=waitpid(childPid_,&childStatus,WNOHANG);
-            if(ended==childPid_){ childPid_=-1;releaseLock(); if(shouldRun){ ++failedStarts; const char* delay=std::getenv("TROLLFX_RTA_TEST_RETRY_DELAY_MS");retryAt=std::chrono::steady_clock::now()+std::chrono::milliseconds(delay?std::max(50,atoi(delay)):failedStarts==1?2000:failedStarts==2?5000:15000); } }
+            if(ended==childPid_){ childPid_=-1;releaseLock();cleanupTemporaryExecutable(); if(shouldRun){ ++failedStarts; const char* delay=std::getenv("TROLLFX_RTA_TEST_RETRY_DELAY_MS");retryAt=std::chrono::steady_clock::now()+std::chrono::milliseconds(delay?std::max(50,atoi(delay)):failedStarts==1?2000:failedStarts==2?5000:15000); } }
         }
         long startupTimeoutMs=10000;if(const char* configured=std::getenv("TROLLFX_RTA_TEST_STARTUP_TIMEOUT_MS")){char* end=nullptr;long n=strtol(configured,&end,10);if(end!=configured&&n>=100&&n<=60000)startupTimeoutMs=n;}
         if(childPid_>0 && !apiAvailable && std::chrono::steady_clock::now()-childStartedAt_>std::chrono::milliseconds(startupTimeoutMs)) {
             stopOwned(); ++failedStarts; const char* delay=std::getenv("TROLLFX_RTA_TEST_RETRY_DELAY_MS");retryAt=std::chrono::steady_clock::now()+std::chrono::milliseconds(delay?std::max(50,atoi(delay)):failedStarts==1?2000:failedStarts==2?5000:15000);
         }
-        if(childPid_>0 && !childMatches()) { childPid_=-1;releaseLock(); }
+        if(childPid_>0 && !childMatches()) { childPid_=-1;releaseLock();cleanupTemporaryExecutable(); }
         if(external && !apiAvailable && childPid_<=0) { external=false; retryAt=std::chrono::steady_clock::now()+std::chrono::seconds(1); }
         if(!shouldRun && childPid_>0) stopOwned();
         if(apiAvailable && childPid_<=0) {

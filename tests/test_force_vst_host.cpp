@@ -156,6 +156,7 @@ int main(int argc,char**argv) {
         pid_t pid=-1; const auto deadline=std::chrono::steady_clock::now()+std::chrono::seconds(4);
         while(std::chrono::steady_clock::now()<deadline){std::ifstream f(pidPath); long value=0;if(f>>value){pid=static_cast<pid_t>(value);break;}std::this_thread::sleep_for(std::chrono::milliseconds(50));}
         if(pid<=0){std::puts("FAIL first instance did not start bundled analyzer mock");return 1;}
+        if(std::strcmp(mode,"--service-lifecycle")==0){char proc[64],exe[4096];std::snprintf(proc,sizeof(proc),"/proc/%ld/exe",static_cast<long>(pid));const ssize_t n=readlink(proc,exe,sizeof(exe)-1);if(n<=0){std::puts("FAIL cannot inspect analyzer launch path");return 1;}exe[n]=0;if(std::strncmp(exe,"/tmp/trollfx-rta-v02-armv7-",27)!=0){std::printf("FAIL analyzer was not staged to executable tmp storage: %s\n",exe);return 1;}}
         std::this_thread::sleep_for(std::chrono::milliseconds(250));
         auto p=readPids();const int records=static_cast<int>(p.size());
         if(records!=1){std::printf("FAIL duplicate analyzer processes: %d\n",records);return 1;}

@@ -14,6 +14,8 @@ The SVG plots response shape relative to the smoothed 1 kHz magnitude and explic
 
 The pinned MPC Plugin Builder skin format exposes parameter-bound image strips, sliders, and labels, but no supported arbitrary response-series graph or dynamically sourced SVG image. The `SWEEP RESULTS` page therefore renders a bounded 31-column response using appended read-only LED parameters. It is an overview; detailed inspection remains in the full-resolution SVG/CSV. Smoothing and saved-measurement selectors are appended after all V0.5 indices (122 and 123); read-only overview values use 124–154. The existing UID `TfRA` and parameter indices 0–121 remain unchanged. These choices trigger worker-thread session reprocessing only and never start capture or sweep playback.
 
+At plugin startup the analyzer binary is copied by the background worker to a unique executable file under `/tmp` before `posix_spawn`. This supports Force removable drives mounted `noexec` (including exFAT) while the calibration files and saved sessions remain beside the installed plugin. The temporary copy is removed after the owned analyzer exits; it does not change ALSA or Force playback routing.
+
 ## CLI
 
 `Service/trollfx-sweep-cli-armv7 reprocess SESSION [none|1/48|1/24|1/12|1/6|1/3] [reference_hz]`
