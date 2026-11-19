@@ -40,7 +40,8 @@ int main(int argc,char**argv) {
         e->dispatcher(e,effSetBlockSize,0,128,nullptr,0);
         e->dispatcher(e,effMainsChanged,0,1,nullptr,0);
     }
-    if(a->numParams!=155){std::printf("FAIL appended V0.5.1 parameter count: %d\n",a->numParams);return 1;}
+    if(a->numParams!=218){std::printf("FAIL appended V0.5.2 parameter count: %d\n",a->numParams);return 1;}
+    if(a->dispatcher(a,effGetVendorVersion,0,0,nullptr,0.0f)!=502){std::puts("FAIL V0.5.2 build version");return 1;}
     char parameterName[64]{};a->dispatcher(a,effGetParamName,110,0,parameterName,0.0f);
     if(std::strcmp(parameterName,"Peak Fall")!=0){std::printf("FAIL V0.3 parameter ordering changed at 110: %s\n",parameterName);return 1;}
     a->dispatcher(a,effGetParamName,111,0,parameterName,0.0f);
@@ -52,6 +53,9 @@ int main(int argc,char**argv) {
     a->dispatcher(a,effGetParamName,122,0,parameterName,0.0f);
     if(std::strcmp(parameterName,"Sweep Smoothing")!=0||std::fabs(a->getParameter(a,122)-4.0f/5.0f)>0.01f){std::printf("FAIL V0.5.1 appended smoothing selector/default: %s %.3f\n",parameterName,a->getParameter(a,122));return 1;}
     a->dispatcher(a,effGetParamName,123,0,parameterName,0.0f);if(std::strcmp(parameterName,"Saved Measurement")!=0||a->getParameter(a,123)!=0.0f){std::printf("FAIL V0.5.1 saved measurement selector/default: %s\n",parameterName);return 1;}
+    a->dispatcher(a,effGetParamName,155,0,parameterName,0.0f);if(std::strcmp(parameterName,"SP20")!=0){std::printf("FAIL V0.5.2 smoothed graph parameter index: %s\n",parameterName);return 1;}
+    a->dispatcher(a,effGetParamName,186,0,parameterName,0.0f);if(std::strcmp(parameterName,"RawP20")!=0){std::printf("FAIL V0.5.2 raw graph parameter index: %s\n",parameterName);return 1;}
+    a->dispatcher(a,effGetParamName,217,0,parameterName,0.0f);if(std::strcmp(parameterName,"Result Status")!=0){std::printf("FAIL V0.5.2 result status parameter: %s\n",parameterName);return 1;}
     if(argc>=3) {
         const char* mode=argv[2];
         auto display=[&](AEffect* e,int index){char out[64]{};e->dispatcher(e,effGetParamDisplay,index,0,out,0.0f);return std::string(out);};
@@ -80,6 +84,14 @@ int main(int argc,char**argv) {
             a->setParameter(a,123,1.0f/7.0f); // Previous 2 selects the older saved measurement.
             if(std::fabs(a->getParameter(a,123)-1.0f/7.0f)>0.01f){std::printf("FAIL saved-measurement selector value %.4f\n",a->getParameter(a,123));return 1;}
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            if(display(a,217)!="READY"||std::fabs(a->getParameter(a,148)-1.0f)>0.02f||std::fabs(a->getParameter(a,179)-1.0f)>0.02f||std::fabs(a->getParameter(a,210)-1.0f)>0.02f){std::printf("FAIL selected Previous 2 response values/status: %s led %.3f smooth %.3f raw %.3f\n",display(a,217).c_str(),a->getParameter(a,148),a->getParameter(a,179),a->getParameter(a,210));return 1;}
+            const float previous2Raw=a->getParameter(a,210);
+            a->setParameter(a,123,2.0f/7.0f); // Previous 3 has a distinct 5 kHz response.
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            if(display(a,217)!="READY"||std::fabs(a->getParameter(a,148)-2.0f/3.0f)>0.03f||std::fabs(a->getParameter(a,210)-2.0f/3.0f)>0.03f||std::fabs(a->getParameter(a,210)-previous2Raw)<0.25f){std::printf("FAIL switching to Previous 3 did not update static response curve: %s led %.3f raw %.3f\n",display(a,217).c_str(),a->getParameter(a,148),a->getParameter(a,210));return 1;}
+            const float smoothingModes[]={0.0f,0.2f,0.4f,0.6f,0.8f,1.0f};
+            for(float mode:smoothingModes){a->setParameter(a,122,mode);std::this_thread::sleep_for(std::chrono::milliseconds(250));}
+            if(display(a,217)!="READY"){std::puts("FAIL smoothing/measurement changes lost the displayed result");return 1;}
             for(AEffect* e:{a,b}){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);}dlclose(lib);
             std::printf("PASS explicit sweep emits safe identical stereo signal, then returns to pass-through (%zu sweep frames)\n",sweepFrames);return 0;
         }
@@ -89,6 +101,20 @@ int main(int argc,char**argv) {
             if(chunk.size()<12||std::memcmp(chunk.data(),"MPCP",4)!=0||a->dispatcher(a,effSetChunk,0,(VstIntPtr)chunk.size(),chunk.data(),0.0f)!=1){std::puts("FAIL loading V0.3 state chunk");return 1;}
             if(std::fabs(a->getParameter(a,101)-27.0f/48.0f)>0.002f||std::fabs(a->getParameter(a,110)-40.0f/58.0f)>0.002f||a->getParameter(a,111)!=0||a->getParameter(a,112)!=0||a->getParameter(a,113)!=0||a->getParameter(a,115)!=0||a->getParameter(a,116)!=0||a->getParameter(a,117)!=0){std::puts("FAIL V0.3 parameter values or appended V0.4/V0.5 defaults changed");return 1;}
             for(AEffect* e:{a,b}){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);}dlclose(lib);std::puts("PASS V0.3 saved-state chunk loads unchanged and appended controls default safely");return 0;
+        }
+        if(std::strcmp(mode,"--saved-v051-state-compat")==0){
+            // Build a V0.5.1-shaped 155-parameter state chunk from the current
+            // stable IDs, then load it into V0.5.2. This exercises the exact
+            // old chunk shape without relying on an obsolete desktop binary.
+            a->setParameter(a,101,0.75f);a->setParameter(a,110,38.0f/58.0f);a->setParameter(a,122,0.6f);a->setParameter(a,123,1.0f/7.0f);
+            void* chunkPtr=nullptr;const VstIntPtr chunkSize=a->dispatcher(a,effGetChunk,0,0,&chunkPtr,0.0f);
+            if(!chunkPtr||chunkSize<12){std::puts("FAIL obtaining current stable parameter state");return 1;}
+            const auto* source=static_cast<const unsigned char*>(chunkPtr);std::vector<unsigned char> old(source,source+12);old[4]=2;old[5]=old[6]=old[7]=0;
+            old[8]=155;old[9]=old[10]=old[11]=0;size_t pos=12;
+            for(int i=0;i<155;i++){if(pos>=static_cast<size_t>(chunkSize)){std::puts("FAIL truncating V0.5.1 parameter state");return 1;}const size_t item=1+source[pos]+8;if(pos+item>static_cast<size_t>(chunkSize)){std::puts("FAIL parsing V0.5.1 parameter state");return 1;}old.insert(old.end(),source+pos,source+pos+item);pos+=item;}
+            old.insert(old.end(),4,0);if(a->dispatcher(a,effSetChunk,0,static_cast<VstIntPtr>(old.size()),old.data(),0.0f)!=1){std::puts("FAIL loading V0.5.1 saved-state shape");return 1;}
+            if(std::fabs(a->getParameter(a,101)-0.75f)>0.002f||std::fabs(a->getParameter(a,110)-38.0f/58.0f)>0.002f||std::fabs(a->getParameter(a,122)-0.6f)>0.002f||std::fabs(a->getParameter(a,123)-1.0f/7.0f)>0.002f||std::fabs(a->getParameter(a,155))>0.002f||std::fabs(a->getParameter(a,186))>0.002f){std::puts("FAIL V0.5.1 parameters changed or V0.5.2 appended defaults were not safe");return 1;}
+            for(AEffect* e:{a,b}){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);}dlclose(lib);std::puts("PASS V0.5.1 155-parameter saved-state shape loads with indices preserved and appended graph values defaulted");return 0;
         }
         const char* pidPath=std::getenv("TROLLFX_RTA_TEST_PIDFILE"); if(!pidPath){std::puts("FAIL missing mock service PID file setting");return 1;}
         auto readPids=[&](){std::vector<pid_t> p;std::ifstream f(pidPath);long value=0;while(f>>value)p.push_back(static_cast<pid_t>(value));return p;};

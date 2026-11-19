@@ -1,6 +1,7 @@
 #include "mpc_plugin.h"
 #include "spectrum_json.h"
 #include "../../../src/sweep/sweep_dsp.hpp"
+#include "../../../src/sweep/sweep_display.hpp"
 
 #include <array>
 #include <algorithm>
@@ -38,11 +39,14 @@ enum : int {
     kAttack, kFall, kPeakHold, kPeakFall,
     kServiceMode, kServiceStart, kServiceStop, kServiceState,
     kSweepStart, kSweepCancel, kSweepState, kSweepDuration, kSweepStartHz, kSweepStopHz, kSweepLevel, kSweepSmoothing,
-    kSweepMeasurement, kSweepResponse0, kParamCount=kSweepResponse0+31
+    kSweepMeasurement, kSweepResponse0, kSweepSmoothDb0=kSweepResponse0+31,
+    kSweepRawDb0=kSweepSmoothDb0+31, kSweepResultStatus=kSweepRawDb0+31,
+    kParamCount=kSweepResultStatus+1
 };
 constexpr int kUid = MPC_FOURCC('T', 'f', 'R', 'A');
 enum ServiceState : int { SERVICE_STOPPED, SERVICE_STARTING, SERVICE_ONLINE, SERVICE_STOPPING, SERVICE_ERROR, SERVICE_EXTERNAL };
 enum SweepUiState : int { SWEEP_IDLE, SWEEP_STARTING, SWEEP_ARMED, SWEEP_CAPTURING, SWEEP_PROCESSING, SWEEP_READY, SWEEP_CANCELLED, SWEEP_ERROR };
+enum SweepResultState : int { RESULT_NONE, RESULT_LOADING, RESULT_READY, RESULT_INVALID };
 static void servicePathAnchor() {}
 
 bool writeAll(int fd, const char* p, size_t n) {
@@ -178,6 +182,10 @@ public:
         addParam(mpc::choiceParam("sweep_measurement","Saved Measurement",{"Latest","Previous 2","Previous 3","Previous 4","Previous 5","Previous 6","Previous 7","Previous 8"},0));
         static const char* responseNames[31]={"R20","R25","R31","R40","R50","R63","R80","R100","R125","R160","R200","R250","R315","R400","R500","R630","R800","R1k","R1k2","R1k6","R2k","R2k5","R3k1","R4k","R5k","R6k3","R8k","R10k","R12k","R16k","R20k"};
         for(int i=0;i<31;i++){auto p=mpc::floatParam((std::string("sweep_response_")+std::to_string(i)).c_str(),responseNames[i],0,24,0,"LED",0);p.automatable=false;addParam(p);}
+        static const char* plotNames[31]={"P20","P25","P31","P40","P50","P63","P80","P100","P125","P160","P200","P250","P315","P400","P500","P630","P800","P1k","P1k2","P1k6","P2k","P2k5","P3k1","P4k","P5k","P6k3","P8k","P10k","P12k","P16k","P20k"};
+        for(int i=0;i<31;i++){auto p=mpc::floatParam((std::string("sweep_smooth_db_")+std::to_string(i)).c_str(),(std::string("S")+plotNames[i]).c_str(),-30,6,-30,"dB",1);p.automatable=false;addParam(p);}
+        for(int i=0;i<31;i++){auto p=mpc::floatParam((std::string("sweep_raw_db_")+std::to_string(i)).c_str(),(std::string("Raw")+plotNames[i]).c_str(),-30,6,-30,"dB",1);p.automatable=false;addParam(p);}
+        auto resultStatus=mpc::choiceParam("sweep_result_status","Result Status",{"NO MEASUREMENT","LOADING","READY","INVALID"},0);resultStatus.automatable=false;addParam(resultStatus);
         addProgram("RTA", defaults());
         SharedClient::instance().add(this);
         sweepThread_=std::thread(&TrollfxRta::sweepWorker,this);
@@ -246,6 +254,7 @@ public:
         if (index == kMic) { out = v >= 0.5f ? "ONLINE" : "OFFLINE"; return true; }
         if (index == kServiceState) { static const char* names[]={"STOPPED","STARTING","ONLINE","STOPPING","ERROR","EXTERNAL"}; int n=mpc::clamp(static_cast<int>(v),0,5); out=names[n]; return true; }
         if (index == kSweepState) { static const char* names[]={"IDLE","STARTING","ARMED","CAPTURING","PROCESSING","READY","CANCELLED","ERROR"};int n=mpc::clamp(static_cast<int>(v),0,7);out=names[n];return true; }
+        if (index == kSweepResultStatus) { static const char* names[]={"NO MEASUREMENT","LOADING","READY","INVALID"};int n=mpc::clamp(static_cast<int>(v),0,3);out=names[n];return true; }
         return false;
     }
     void update(const trollfx::Snapshot& s) {
@@ -321,6 +330,8 @@ public:
         v[kServiceMode]=0; v[kServiceStart]=0; v[kServiceStop]=0; v[kServiceState]=SERVICE_STOPPED;
         v[kSweepStart]=0;v[kSweepCancel]=0;v[kSweepState]=SWEEP_IDLE;v[kSweepDuration]=10;v[kSweepStartHz]=20;v[kSweepStopHz]=20000;v[kSweepLevel]=-30;v[kSweepSmoothing]=4;v[kSweepMeasurement]=0;
         for(int i=0;i<31;i++)v[kSweepResponse0+i]=0;
+        for(int i=0;i<31;i++){v[kSweepSmoothDb0+i]=-30;v[kSweepRawDb0+i]=-30;}
+        v[kSweepResultStatus]=RESULT_NONE;
         return v;
     }
 private:
@@ -331,14 +342,15 @@ private:
         while(!sweepShutdown_.load(std::memory_order_acquire)){
             if(sweepCancel_.exchange(false,std::memory_order_acq_rel)){sweepActive_.store(false,std::memory_order_release);std::string ignored;request("/api/sweep/cancel","POST",ignored);publishSweepState(SWEEP_CANCELLED);}
             if(!sweepRunning_.load(std::memory_order_acquire)&&reprocessRequested_.exchange(false,std::memory_order_acq_rel)){
+                set(kSweepResultStatus,RESULT_LOADING);requestDisplayUpdate();
                 const auto root=sessionRoot();std::error_code ec;std::filesystem::path latest;
                 std::vector<std::filesystem::path> sessions;
                 if(!root.empty()&&std::filesystem::exists(root,ec))for(const auto& entry:std::filesystem::directory_iterator(root,ec))if(entry.is_directory()&&entry.path().filename().string().rfind("sweep-",0)==0&&std::filesystem::exists(entry.path()/"frequency-response.csv"))sessions.push_back(entry.path());
                 std::sort(sessions.begin(),sessions.end(),[](const auto& a,const auto& b){return a.filename().string()>b.filename().string();});
                 const int selected=mpc::clamp(static_cast<int>(std::lround(get(kSweepMeasurement))),0,7);if(static_cast<std::size_t>(selected)<sessions.size())latest=sessions[selected];
                 static const unsigned resolutions[]={0,48,24,12,6,3};const int choice=mpc::clamp(static_cast<int>(std::lround(get(kSweepSmoothing))),0,5);std::string error;
-                if(!latest.empty()&&trollfx::sweep::reprocessSession(latest.string(),resolutions[choice],1000.0,true,&error))updateSweepGraph(latest.string(),resolutions[choice]);
-                else for(int i=0;i<31;i++)set(kSweepResponse0+i,0.0f);
+                if(latest.empty())clearSweepResult(RESULT_NONE);
+                else if(!trollfx::sweep::reprocessSession(latest.string(),resolutions[choice],1000.0,true,&error)||!updateSweepGraph(latest.string(),resolutions[choice]))clearSweepResult(RESULT_INVALID);
                 requestDisplayUpdate();
             }
             if(!sweepStart_.exchange(false,std::memory_order_acq_rel)){sleep(50);continue;}
@@ -386,7 +398,7 @@ private:
             if(!trollfx::sweep::readCalibration(cal,orientation,curve,&error)||!trollfx::sweep::applyCalibration(result,curve,&error)){failSweep();continue;}
             static const unsigned resolutions[]={0,48,24,12,6,3};const int smoothChoice=mpc::clamp(static_cast<int>(std::lround(get(kSweepSmoothing))),0,5);
             if(!trollfx::sweep::writeArtifacts(folder,result,48000,options.startHz,options.stopHz,&error,resolutions[smoothChoice])){failSweep();continue;}
-            updateSweepGraph(folder,resolutions[smoothChoice]);
+            if(!updateSweepGraph(folder,resolutions[smoothChoice]))clearSweepResult(RESULT_INVALID);
             std::filesystem::copy_file(cal,folder+"/calibration-used.txt",std::filesystem::copy_options::overwrite_existing,ec);
             sweepStateValue_=SWEEP_READY;publishSweepState(SWEEP_READY);sweepRunning_.store(false,std::memory_order_release);
         }
@@ -396,16 +408,23 @@ private:
         if (!std::isfinite(db)) return 0.0f;
         return mpc::clamp((db-floorDb)*24.0f/(-floorDb),0.0f,24.0f);
     }
-    void updateSweepGraph(const std::string& folder,unsigned resolution){
-        trollfx::sweep::ResponseCurve raw;std::string error;if(!trollfx::sweep::readResponseCsv(folder+"/frequency-response.csv",raw,&error))return;
-        std::vector<double> smooth;if(!trollfx::sweep::fractionalOctaveSmooth(raw.frequencyHz,raw.magnitude,resolution,smooth,&error))return;
-        const double ref=trollfx::sweep::responseDbAt(raw.frequencyHz,smooth,1000.0);if(!std::isfinite(ref))return;
-        static const double centers[31]={20,25,31.5,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000};
-        for(int i=0;i<31;i++){double db=trollfx::sweep::responseDbAt(raw.frequencyHz,smooth,centers[i])-ref;if(!std::isfinite(db))db=-30.0;set(kSweepResponse0+i,mpc::clamp(static_cast<float>((db+30.0)*24.0/36.0),0.0f,24.0f));}
+    bool updateSweepGraph(const std::string& folder,unsigned resolution){
+        trollfx::sweep::ResponseCurve raw;std::string error;
+        if(!trollfx::sweep::readResponseCsv(folder+"/frequency-response.csv",raw,&error))return false;
+        trollfx::sweep::SweepDisplayResponse display;
+        if(!trollfx::sweep::makeSweepDisplayResponse(raw,resolution,display,&error))return false;
+        for(int i=0;i<31;i++)set(kSweepResponse0+i,display.led[static_cast<std::size_t>(i)]);
+        for(int i=0;i<31;i++){set(kSweepSmoothDb0+i,static_cast<float>(display.smoothedRelativeDb[static_cast<std::size_t>(i)]));set(kSweepRawDb0+i,static_cast<float>(display.rawRelativeDb[static_cast<std::size_t>(i)]));}
+        set(kSweepResultStatus,RESULT_READY);requestDisplayUpdate();return true;
+    }
+    void clearSweepResult(int state){
+        for(int i=0;i<31;i++)set(kSweepResponse0+i,0.0f);
+        for(int i=0;i<31;i++){set(kSweepSmoothDb0+i,-30.0f);set(kSweepRawDb0+i,-30.0f);}
+        set(kSweepResultStatus,static_cast<float>(state));
     }
     static mpc::PluginInfo makeInfo() {
         mpc::PluginInfo i; i.name="TROLLfx - VST - RTA"; i.vendor="TROLLfx"; i.uniqueId=kUid;
-        i.version=501; i.isInstrument=false; i.numInputs=2; i.numOutputs=2; i.tailSamples=1; return i;
+        i.version=502; i.isInstrument=false; i.numInputs=2; i.numOutputs=2; i.tailSamples=1; return i;
     }
     std::array<float,31> smoothState_{};
     std::array<float,31> meterState_{};
