@@ -311,7 +311,7 @@ bool writeArtifacts(const std::string& dir,const AnalysisResult& r,unsigned fs,d
         f<<",\n  \"absolute_spl_status\": \"PROVISIONAL\"\n}\n";
     }
     ResponseCurve raw; if(!readResponseCsv(dir+"/frequency-response.csv",raw,e))return false;
-    if(!writeSmoothedArtifacts(dir,raw,smoothing,1000.0,true,e))return false;
+    if(!writeSmoothedArtifacts(dir,raw,smoothing,1000.0,false,e))return false;
     return true;
 }
 

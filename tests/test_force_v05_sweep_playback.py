@@ -80,6 +80,7 @@ def main():
         sessions = pathlib.Path(sys.argv[2]).resolve().parent.parent / "Service" / "sessions"
         sessions.mkdir(parents=True, exist_ok=True)
         import math
+        original_metadata = {}
         for slot, response_db in enumerate((-30, -24, -21, -18, -15, -12, -6, 6), 1):
             name = f"sweep-{slot:013d}"
             peak = 0.5 * 10 ** (response_db / 20)
@@ -88,6 +89,7 @@ def main():
                 "frequency_hz,magnitude,gain_db,phase_rad\n"
                 f"20,0.5,-6.0206,0\n1000,0.5,-6.0206,0\n5000,{peak},{20*math.log10(peak)},0\n20000,0.5,-6.0206,0\n")
             (old / "measurement.json").write_text('{"format":"V0.5 legacy","clipped_samples":0}\n')
+            original_metadata[name] = (old / "measurement.json").read_bytes()
         result = subprocess.run([sys.argv[1], pathlib.Path(sys.argv[2]).resolve(), mode],
                                 env=env, timeout=90, check=False)
         if result.returncode:
@@ -108,14 +110,14 @@ def main():
         metadata = json.loads((session / "measurement.json").read_text())
         if not metadata.get("marker_alignment_valid"):
             raise SystemExit("saved sweep session lacks valid two-marker alignment")
-        if metadata.get("response_smoothing_octaves") != 3:
-            raise SystemExit("changing smoothing did not reprocess the latest selected session at 1/3 octave")
+        if metadata.get("response_smoothing_octaves") != 6:
+            raise SystemExit("new measurement was not exported with fixed 1/6-octave smoothing")
         if Handler.arm_count != 1:
-            raise SystemExit(f"smoothing change restarted sweep capture {Handler.arm_count} times")
-        previous_two = json.loads((sessions / "sweep-0000000000008" / "measurement.json").read_text())
-        if previous_two.get("smoothing_algorithm_version") != 1 or "response_smoothing_octaves" not in previous_two:
-            raise SystemExit("saved-measurement selection did not reprocess Previous 2")
-        print(f"PASS completed VST sweep saved aligned response, IR and graphs at {session}")
+            raise SystemExit(f"legacy smoothing selection restarted sweep capture {Handler.arm_count} times")
+        for name, original in original_metadata.items():
+            if (sessions / name / "measurement.json").read_bytes() != original:
+                raise SystemExit(f"display selection modified existing saved measurement {name}")
+        print(f"PASS completed VST sweep saved aligned response with fixed 1/6 smoothing; prior metadata preserved at {session}")
     finally:
         server.shutdown()
         server.server_close()

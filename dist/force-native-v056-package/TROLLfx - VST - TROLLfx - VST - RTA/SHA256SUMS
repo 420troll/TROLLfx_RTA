@@ -1,0 +1,48 @@
+7432411892baf85e8c0d78e2e57b4da7d54f94e17860fd5a76f4df3d8ccd18e7  ./FORCE-NATIVE-V04.md
+b2e1355d9a027f02e37102dc4bb80015f0fd154d4ad36401508543266933d926  ./FORCE-NATIVE-V056-README.md
+ed527c8ed2f65ef02de53d69820dd664ccf86fb9e9311867bc6a87469b61424e  ./FORCE-NATIVE-V056-VALIDATION.md
+ae2dfca34cca97c3f41d0bd69b0af05bdf40b1ea38bc68e86b2d6987b53c4d3b  ./Plugin Skins/Q-Links.json
+e3d01dbcabd953a967d289ccf5b32d2c6046f04149f70fc2e0a179d43348b12f  ./Plugin Skins/TUI.json
+26d9a7f6e82a0f3903cd341fb3ce751c1ee5f5f4ce11d8f2488eb15f2788df4b  ./Plugin Skins/led-ladder.png
+b1a11991a7715448413385bb836df601395a22ac4c94b335c799f5e8f6f68731  ./Plugin Skins/level-panel.png
+f3c360d5ebc9478b83cecaa0d4793f4490a8760f60f0a70353a065110079d3db  ./Plugin Skins/panel16.png
+0fdf088dd683644c6d21a07829a9e9e609356ecf96ebb8dfaf96e5f86a382ec5  ./Plugin Skins/panel31.png
+2e8ac143b501364995937d5f57780b8c0cae77114b89837cf4560a71ed02f1ea  ./Plugin Skins/peak-ladder.png
+b9d0a2af4a9b0f3fec242b62205b3bb1bd213c35a8a0d1a32dcb014a719d6bfd  ./Plugin Skins/response-panel.png
+a8fd1205e02ba61771184b57dc13334b70be5f05d64d17210cda64a6b7c5ee75  ./Plugin Skins/sweep-cancel-touch_off.png
+31dafaaf1a87ade3f6949638bedfab08133a13a01f26f923136eb9e6db490bc6  ./Plugin Skins/sweep-cancel-touch_on.png
+7addaf58eda2fe319bd9919f8af91aa98832046272d7c3d2d9c6d7667fef3724  ./Plugin Skins/sweep-graph-panel.png
+073445eaa52c8f1a307d56b23ec37c67629ffdc4d3ee54718413e658c3927fb9  ./Plugin Skins/sweep-graph-segments.png
+d42cf8709f869bee365c0309d6aa4c06780e1e3158aaa0f2d04ecb3ca5685f85  ./Plugin Skins/sweep-led-panel.png
+38e31848378230e56ae3db3af49bb1452ea0de482a3e9d5954d036c2e2d828e0  ./Plugin Skins/sweep-slot-0_off.png
+4b571ae5b65fc614fd24503d65890650b385943018a7f2bca7fb7d56140f2268  ./Plugin Skins/sweep-slot-0_on.png
+68942fcc07c4b2dfe5fa7fa8ec07d73181960e5fd7b85d416605582e44d3c672  ./Plugin Skins/sweep-slot-1_off.png
+ac3d5bd12166e608ff84b84e2ddfd4d08315d970eea6051dba93a69f1d38fbc7  ./Plugin Skins/sweep-slot-1_on.png
+241c66b311a763eb2eba1b67ab1f249514942fc74a0af1761738757e48e4ad05  ./Plugin Skins/sweep-slot-2_off.png
+f2d77b37eb995d0007e86c046c72ab3bf2d896eb19dc89453b3af2ecfd32622a  ./Plugin Skins/sweep-slot-2_on.png
+30a2f8e4d9fa8f7de65ae2ded311c37eb587976492a895c98e87bb917ee56328  ./Plugin Skins/sweep-slot-3_off.png
+32015564764f6c77c0bd349cc63646553b2de0b77926081c4a4431f01630bc27  ./Plugin Skins/sweep-slot-3_on.png
+60bb355a467aa6036f194e43df370da23cfefb9e6f234dfca1a8adf6e6308864  ./Plugin Skins/sweep-slot-4_off.png
+914a14f657f123924ad1b562284748883b090766133b98371125d602ab0ab01f  ./Plugin Skins/sweep-slot-4_on.png
+aaecd6a4ca85804c417250dd5e42ee054264113137391a4ca0e88ba4f0d78de3  ./Plugin Skins/sweep-slot-5_off.png
+55ebf8b3c9b5966161808ea766d5004dd51189448f45df599ff68121b78bdcd1  ./Plugin Skins/sweep-slot-5_on.png
+0d6a9a0211e191d7173f830853ba6630cafb2d3ad814d7c4f21760f09242cd4f  ./Plugin Skins/sweep-slot-6_off.png
+242cce02471d6f40f2cb99f527f37612e4000ba5093592ab50a77a59c5b41740  ./Plugin Skins/sweep-slot-6_on.png
+e890bd71254835e02077c51871a91fa08075d71f6f1419e01a80f8f4e7b32d2d  ./Plugin Skins/sweep-slot-7_off.png
+9bdd45499022f93abbdd70500c8d805d618ac66c3862028091b808b5dd2fc0f1  ./Plugin Skins/sweep-slot-7_on.png
+b189ff635c40be5faee811779a4a9496de427d456aa6a5ef01fea0b0f69dc178  ./Plugin Skins/sweep-start-touch_off.png
+a29c8e39ef54d1f82e1686dc4076afdcd83da1f9442d5c89776664375bf946ec  ./Plugin Skins/sweep-start-touch_on.png
+25bec540211ea7827f7e7f3ca80f22126d2de89500a49d81f7a834b7dd2f2b24  ./Service/PFFFT-LICENSE.txt
+4d342b29c36f444b458cd8def9c0e1273a468aa548170982858dfd0a4c0530b2  ./Service/README.txt
+26047c2eb221acb7b72d18fab809228881dd5887cf6f80e91db4c97fcd9f3b87  ./Service/calibration/7033298.txt
+de4bc532c4e7296c98aaeae17c1ba05f5987fb7d8b6432d113a1f0957b0b41ac  ./Service/calibration/7033298_90deg.txt
+9a67dca94afc57063169e39b31e5f1163da4e5b3869b4fd15855f5ea057a9cf0  ./Service/trollfx-rta-v02-armv7
+871f4f0e22fdabef55ae54742c4903d5866aa3ea8eb315a0d43c04289b76d32b  ./Service/trollfx-sweep-cli-armv7
+ab958ebb720eb1df29eaae4c3b6b377a3ccb9370be3e907fbe44fa285c4b5ca9  ./THIRD_PARTY_NOTICES.txt
+fe3ed84e36666ae21b6f4f8bdf8cab617c6e55746956ac7c8e4655217a1eba52  ./VST/trollfx-rta-arm32.so
+ace349a73ff8eb2abf42fec5d46f9dbc91c9b007275b0afa26e2b633a26def90  ./VST/trollfx-rta-arm64.so
+f57ddbd1867ce346a23b19c2bc2f84207b30345eb57c1b84d50862968bad65e3  ./install-force-v056.sh
+76db2afa0edcc0565df9ae6a189d63f772f9ac2a62d630163ad734d574f55f29  ./plugin.json
+6f639e2575d58d4df68989d671de0a5a9d0ca21183a6cada4cbfaf4c779e5361  ./rollback-force-v056.sh
+40696152854d776c4b719d5c63a7e77b789637f34a63d7f2779c174f6993c597  ./verify-force-v056.sh
+d3823fe0029db0f90f05b1e2b6230dad0fa304f888afeebeda5161e5521c3a0a  ./version.xml

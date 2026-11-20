@@ -41,7 +41,7 @@ int main(int argc,char**argv) {
         e->dispatcher(e,effMainsChanged,0,1,nullptr,0);
     }
     if(a->numParams!=607){std::printf("FAIL appended V0.5.4 parameter count: %d\n",a->numParams);return 1;}
-    if(a->dispatcher(a,effGetVendorVersion,0,0,nullptr,0.0f)!=505){std::puts("FAIL V0.5.5 build version");return 1;}
+    if(a->dispatcher(a,effGetVendorVersion,0,0,nullptr,0.0f)!=506){std::puts("FAIL V0.5.6 build version");return 1;}
     char parameterName[64]{};a->dispatcher(a,effGetParamName,110,0,parameterName,0.0f);
     if(std::strcmp(parameterName,"Peak Fall")!=0){std::printf("FAIL V0.3 parameter ordering changed at 110: %s\n",parameterName);return 1;}
     a->dispatcher(a,effGetParamName,111,0,parameterName,0.0f);
@@ -118,7 +118,7 @@ int main(int argc,char**argv) {
             for(int i=0;i<128;i++){il[i]=0.013f;ir[i]=-0.021f;ol[i]=orr[i]=0;}
             float* in[]={il,ir};float* out[]={ol,orr};a->processReplacing(a,in,out,128);
             for(int i=0;i<128;i++)if(ol[i]!=il[i]||orr[i]!=ir[i]){std::puts("FAIL normal pass-through did not resume after sweep error");return 1;}
-            a->setParameter(a,122,0.0f); // No Smoothing re-renders the saved result only.
+            a->setParameter(a,122,0.0f); // Legacy state remains writable but is ignored by results.
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
             const float latestSweepResponse=a->getParameter(a,210);
             a->setParameter(a,123,1.0f/7.0f); // Previous 2 selects the older saved measurement.
@@ -126,8 +126,9 @@ int main(int argc,char**argv) {
             if(!waitParameter(210,1.0f,0.02f,20000)||!waitDisplay(217,"READY",5000)||std::fabs(a->getParameter(a,148)-0.875f)>0.02f||std::fabs(a->getParameter(a,179)-1.0f)>0.02f){std::printf("FAIL selected Previous 2 response values/status: %s led %.3f smooth %.3f raw %.3f\n",display(a,217).c_str(),a->getParameter(a,148),a->getParameter(a,179),a->getParameter(a,210));return 1;}
             for(int i=0;i<31;i++)if(std::fabs(a->getParameter(a,218+i)-a->getParameter(a,124+i))>0.03f){std::printf("FAIL saved graph marker is not aligned with saved LED response at %d\n",i);return 1;}
             const float previous2Raw=a->getParameter(a,210);
+            const float previous2Led=a->getParameter(a,148);
             a->setParameter(a,123,2.0f/7.0f); // Previous 3 has a distinct 5 kHz response.
-            if(!waitParameter(210,2.0f/3.0f,0.03f,20000)||!waitDisplay(217,"READY",5000)||std::fabs(a->getParameter(a,148)-0.625f)>0.03f||std::fabs(a->getParameter(a,210)-previous2Raw)<0.25f){std::printf("FAIL switching to Previous 3 did not update static response curve: %s led %.3f raw %.3f\n",display(a,217).c_str(),a->getParameter(a,148),a->getParameter(a,210));return 1;}
+            if(!waitParameter(210,2.0f/3.0f,0.03f,20000)||!waitDisplay(217,"READY",5000)||a->getParameter(a,148)>=previous2Led||a->getParameter(a,148)<=0.0f||std::fabs(a->getParameter(a,210)-previous2Raw)<0.25f){std::printf("FAIL switching to Previous 3 did not update static response curve: %s led %.3f previous %.3f raw %.3f\n",display(a,217).c_str(),a->getParameter(a,148),previous2Led,a->getParameter(a,210));return 1;}
             if(std::fabs(a->getParameter(a,218+24)-a->getParameter(a,124+24))>0.03f){std::puts("FAIL graph peak marker did not follow saved Previous 3 response");return 1;}
             const float expectedSavedSlots[]={0.0f,1.0f,2.0f/3.0f,0.5f,15.0f/36.0f,12.0f/36.0f,0.25f,1.0f/6.0f};
             for(int slot=3;slot<8;slot++){
@@ -140,18 +141,18 @@ int main(int argc,char**argv) {
             if(!waitParameter(210,latestSweepResponse,0.02f,20000)||!waitDisplay(217,"READY",5000)){
                 std::printf("FAIL saved sweep radio value 0 did not restore Latest response %.3f (got %.3f)\n",latestSweepResponse,a->getParameter(a,210));return 1;
             }
-            const float smoothingModes[]={0.0f,0.2f,0.4f,0.6f,0.8f,1.0f};
-            for(float mode:smoothingModes){a->setParameter(a,122,mode);std::this_thread::sleep_for(std::chrono::milliseconds(250));}
-            if(!waitDisplay(217,"READY",4000)){std::puts("FAIL smoothing/measurement changes lost the displayed result");return 1;}
+            const float fixedLed=a->getParameter(a,148), fixedCurve=a->getParameter(a,545+17);
+            const float legacySmoothingModes[]={0.0f,0.2f,0.4f,0.6f,0.8f,1.0f};
+            for(float mode:legacySmoothingModes){a->setParameter(a,122,mode);std::this_thread::sleep_for(std::chrono::milliseconds(30));}
+            if(!waitDisplay(217,"READY",4000)||std::fabs(a->getParameter(a,148)-fixedLed)>0.001f||std::fabs(a->getParameter(a,545+17)-fixedCurve)>0.001f){std::puts("FAIL legacy smoothing state changed fixed 1/6-octave sweep results");return 1;}
             // The new full-precision outputs retain actual relative dB outside
             // the LED window; range and center change only the reversible view.
             const int actualSmoothDb=545+17, actualRawDb=576+17;
             const float expectedRelativeDb=(0.0f+240.0f)/360.0f;
             if(std::fabs(a->getParameter(a,actualSmoothDb)-expectedRelativeDb)>0.01f||std::fabs(a->getParameter(a,actualRawDb)-expectedRelativeDb)>0.01f){std::printf("FAIL unbounded dB diagnostics: smooth %.4f raw %.4f\n",a->getParameter(a,actualSmoothDb),a->getParameter(a,actualRawDb));return 1;}
-            a->setParameter(a,250,0.0f); // 24 dB range, same measurement and reference.
-            if(!waitParameter(141,1.0f,0.02f,3000)){std::puts("FAIL 24 dB range did not map the 1 kHz reference to its visible upper boundary");return 1;}
-            a->setParameter(a,251,0.5f); // center at 0 dB, range now [-12,+12].
-            if(!waitParameter(141,0.5f,0.02f,3000)||std::fabs(a->getParameter(a,actualSmoothDb)-expectedRelativeDb)>0.01f){std::puts("FAIL display center altered stored response instead of only its view");return 1;}
+            a->setParameter(a,250,0.0f); // Legacy display controls are hidden and ignored.
+            a->setParameter(a,251,0.5f);
+            if(std::fabs(a->getParameter(a,148)-fixedLed)>0.001f||std::fabs(a->getParameter(a,actualSmoothDb)-expectedRelativeDb)>0.01f){std::puts("FAIL legacy range/center controls altered fixed auto-range results");return 1;}
             for(AEffect* e:{a,b}){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);}dlclose(lib);
             std::printf("PASS explicit sweep emits safe identical stereo signal, then returns to pass-through (%zu sweep frames)\n",sweepFrames);return 0;
         }

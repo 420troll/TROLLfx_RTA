@@ -10,8 +10,13 @@ namespace trollfx::sweep {
 constexpr std::size_t kSweepDisplayBands = 31;
 constexpr std::size_t kSweepGraphSamples = 256;
 constexpr std::size_t kSweepGraphSegments = kSweepGraphSamples - 1;
-constexpr unsigned kSweepGraphVerticalSteps = 129;
+// The Force skin renderer can only select a vertical film-strip frame. Keep
+// this pair-coded segment atlas below 64 KiB tall while retaining 31 display
+// levels; the previous 129x129 lookup produced a 1,065,088 px image that the
+// Force firmware failed to load.
+constexpr unsigned kSweepGraphVerticalSteps = 31;
 constexpr unsigned kSweepGraphMissingFrame = kSweepGraphVerticalSteps * kSweepGraphVerticalSteps;
+constexpr unsigned kSweepDisplaySmoothingN = 6;
 
 struct SweepDisplayResponse {
     std::array<double, kSweepDisplayBands> rawRelativeDb{};
@@ -20,18 +25,17 @@ struct SweepDisplayResponse {
     std::array<int, kSweepDisplayBands> clipping{}; // 0=within range, 1=above, 2=below, 3=outside measurement bandwidth
     std::array<double, kSweepGraphSamples> graphRelativeDb{};
     std::array<unsigned, kSweepGraphSegments> graphSegmentFrame{};
-    double displayRangeDb = 48.0;
+    double displayRangeDb = 2.0;
     double displayMinimumDb = 0.0;
     double displayMaximumDb = 0.0;
 };
 
-// Reversible view transform for the Force result page. Raw response data are
-// never modified. Curves are referenced to the measured 1 kHz magnitude and
-// limited to the actual valid sweep bandwidth.
-bool makeSweepDisplayResponse(const ResponseCurve& raw, unsigned smoothingN,
+// Reversible view transform for the Force result pages. Always uses 1/6-octave
+// smoothing on original high-resolution response data. The common dB window is
+// auto-fit to the full valid smoothed response with 5% or 1 dB headroom.
+// Raw response and phase arrays are never modified.
+bool makeSweepDisplayResponse(const ResponseCurve& raw,
                               SweepDisplayResponse& display,
-                              std::string* error = nullptr,
-                              double displayRangeDb = 48.0,
-                              double displayCenterDb = -12.0);
+                              std::string* error = nullptr);
 
 } // namespace trollfx::sweep
