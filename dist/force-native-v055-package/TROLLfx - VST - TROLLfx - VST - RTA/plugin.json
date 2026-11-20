@@ -1,0 +1,16 @@
+{
+  "name": "TROLLfx - VST - RTA",
+  "manufacturer": "TROLLfx",
+  "version": "0.5.5",
+  "format": "vst2",
+  "kind": "effect",
+  "uid": "TfRA",
+  "numInputs": 2,
+  "numOutputs": 2,
+  "category": "Effect",
+  "file32": "VST/trollfx-rta-arm32.so",
+  "file64": "VST/trollfx-rta-arm64.so",
+  "description": "TROLLfx RTA with native sweep controls, saved-measurement selection, adjustable full-range LED results and a connected saved response graph",
+  "author": "TROLLfx",
+  "license": "MIT"
+}

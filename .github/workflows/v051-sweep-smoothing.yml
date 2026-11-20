@@ -1,0 +1,39 @@
+name: V0.5.1 Sweep Smoothing
+on:
+  push:
+    branches: [feature/v051-sweep-smoothing]
+  pull_request:
+    branches: [feature/force-native-rta-v04-auto-service]
+jobs:
+  smoothing-and-arm-package:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-venv python3-numpy g++ binutils
+      - name: DSP, smoothing, CLI and regression tests
+        run: |
+          bash scripts/test-sweep-dsp.sh
+          for t in test_sweep_fixture.py test_sweep_comparison.py test_sweep_cli.py test_sweep_service_api.py test_sweep_smoothing_reference.py; do python3 -m unittest discover -s tests -p "$t" -v; done
+      - name: Install pinned pyfar independent reference
+        run: |
+          python3 -m venv "$RUNNER_TEMP/pyfar-venv"
+          "$RUNNER_TEMP/pyfar-venv/bin/pip" install -r requirements-sweep-reference.txt
+          "$RUNNER_TEMP/pyfar-venv/bin/python" -m unittest discover -s tests -p test_sweep_pyfar.py -v
+      - name: Get pinned MPC SDK and Zig
+        run: |
+          git clone https://github.com/inmusic-software/mpc-plugin-builder-sdk.git "$RUNNER_TEMP/mpc-plugin-builder-sdk"
+          git -C "$RUNNER_TEMP/mpc-plugin-builder-sdk" checkout febd2ca5bd9eb16c4a412837196e145566bc981b
+          python3 -m pip install --target "$RUNNER_TEMP/v051-python" ziglang==0.17.1 Pillow==10.4.0
+          echo "PYTHONPATH=$RUNNER_TEMP/v051-python" >> "$GITHUB_ENV"
+      - name: Build and package ARMv7 V0.5.1
+        env:
+          MPC_SDK_DIR: ${{ runner.temp }}/mpc-plugin-builder-sdk
+          SDK_ZIG_PYTHON: /usr/bin/python3
+        run: bash scripts/build-force-v051.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trollfx-sweep-lab-v051-force-test
+          path: |
+            dist/force-native-v051-package.tar.gz
+            dist/force-native-v051-package.tar.gz.sha256

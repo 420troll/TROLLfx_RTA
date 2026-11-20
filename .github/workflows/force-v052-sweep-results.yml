@@ -1,0 +1,38 @@
+name: V0.5.2 Sweep Results
+on:
+  push:
+    branches: [feature/v052-sweep-results-display]
+  pull_request:
+    branches: [feature/v051-sweep-smoothing, feature/v052-sweep-results-display]
+jobs:
+  sweep-results-and-arm-package:
+    if: ${{ !startsWith(github.head_ref, 'feature/v053-') }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-venv python3-numpy g++ binutils
+      - name: Install pinned pyfar reference
+        run: |
+          mkdir -p build
+          g++ -O2 -std=c++17 -Wall -Wextra -Wpedantic tools/sweep_cli.cpp src/sweep/sweep_dsp.cpp -o build/trollfx-sweep-cli
+          python3 -m venv "$RUNNER_TEMP/pyfar-venv"
+          "$RUNNER_TEMP/pyfar-venv/bin/pip" install -r requirements-sweep-reference.txt
+          "$RUNNER_TEMP/pyfar-venv/bin/python" -m unittest discover -s tests -p test_sweep_pyfar.py -v
+      - name: Get pinned MPC SDK and Zig
+        run: |
+          git clone https://github.com/inmusic-software/mpc-plugin-builder-sdk.git "$RUNNER_TEMP/mpc-plugin-builder-sdk"
+          git -C "$RUNNER_TEMP/mpc-plugin-builder-sdk" checkout febd2ca5bd9eb16c4a412837196e145566bc981b
+          python3 -m pip install --target "$RUNNER_TEMP/v052-python" ziglang==0.17.1 Pillow==10.4.0
+          echo "PYTHONPATH=$RUNNER_TEMP/v052-python" >> "$GITHUB_ENV"
+      - name: DSP, host, skin, package and ARMv7 regression build
+        env:
+          MPC_SDK_DIR: ${{ runner.temp }}/mpc-plugin-builder-sdk
+          SDK_ZIG_PYTHON: /usr/bin/python3
+        run: bash scripts/build-force-v052.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trollfx-sweep-results-v052-force-test
+          path: |
+            dist/force-native-v052-package.tar.gz
+            dist/force-native-v052-package.tar.gz.sha256

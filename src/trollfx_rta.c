@@ -10,6 +10,7 @@
 #include <signal.h>
 #include <time.h>
 #include <errno.h>
+#include <stdatomic.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <sys/select.h>
@@ -30,7 +31,15 @@ static int mic=0;
 static char status[180]="Starting";
 static float ring[N];
 static int pos=0,filled=0,hop=0;
-static void fail(const char*s){pthread_mutex_lock(&mutex);mic=0;snprintf(status,sizeof(status),"%s",s);pthread_mutex_unlock(&mutex);}
+#define SWEEP_MAX_FRAMES (48000u*30u+48000u)
+enum { SWEEP_IDLE=0,SWEEP_ARMED,SWEEP_CAPTURING,SWEEP_STOP_REQUESTED,SWEEP_READY,SWEEP_ERROR };
+static float sweep_capture[SWEEP_MAX_FRAMES];
+static _Atomic int sweep_state=SWEEP_IDLE;
+static _Atomic unsigned sweep_frames=0,sweep_limit=0,sweep_clips=0;
+static _Atomic uint64_t sweep_ready_ms=0;
+static uint64_t monotonic_ms(void){struct timespec t;if(clock_gettime(CLOCK_MONOTONIC,&t))return 0;return (uint64_t)t.tv_sec*1000u+(uint64_t)t.tv_nsec/1000000u;}
+static void sweep_ready(void){atomic_store_explicit(&sweep_ready_ms,monotonic_ms(),memory_order_relaxed);atomic_store_explicit(&sweep_state,SWEEP_READY,memory_order_release);}
+static void fail(const char*s){pthread_mutex_lock(&mutex);mic=0;snprintf(status,sizeof(status),"%s",s);pthread_mutex_unlock(&mutex);int st=atomic_load(&sweep_state);if(st==SWEEP_ARMED||st==SWEEP_CAPTURING||st==SWEEP_STOP_REQUESTED)atomic_store(&sweep_state,SWEEP_ERROR);}
 static void analyze(void){
  double v[NB],level,z_level,a_level;float ordered[N];for(int i=0;i<N;i++)ordered[i]=ring[(pos+i)%N];
  dsp_analyze(ordered,N,48000,active_cal,active_cal_n,v,&level,&z_level,&a_level);
@@ -41,7 +50,15 @@ static void analyze(void){
  for(int b=0;b<NB;b++){double power=0;for(int j=0;j<nframes;j++){int idx=(history_pos-1-j+16)%16;power+=band_history[idx][b];}bars[b]=10*log10(fmax(power/nframes,1e-12));if(bars[b]>peaks[b])peaks[b]=bars[b];}
  rms=level;z_dbfs=z_level;a_dbfs=a_level;mic=1;if(!isfinite(spl_sensitivity))strcpy(status,"Capture running · SPL provisional (dBFS)");else strcpy(status,"Capture running · SPL reference applied");pthread_mutex_unlock(&mutex);
 }
-static void sample(float s){ring[pos]=s;pos=(pos+1)%N;if(filled<N)filled++;if(++hop>=1024&&filled==N){hop=0;analyze();}}
+static void sample(float s){
+ int st=atomic_load_explicit(&sweep_state,memory_order_acquire);
+ if(st==SWEEP_STOP_REQUESTED){sweep_ready();return;}
+ if(st==SWEEP_ARMED){int expected=SWEEP_ARMED;atomic_compare_exchange_strong(&sweep_state,&expected,SWEEP_CAPTURING);st=atomic_load_explicit(&sweep_state,memory_order_acquire);}
+ if(st==SWEEP_CAPTURING){unsigned n=atomic_load_explicit(&sweep_frames,memory_order_relaxed),limit=atomic_load_explicit(&sweep_limit,memory_order_relaxed);if(n>=limit){sweep_ready();return;}sweep_capture[n]=s;if(fabsf(s)>=0.999f)atomic_fetch_add_explicit(&sweep_clips,1,memory_order_relaxed);atomic_store_explicit(&sweep_frames,n+1,memory_order_release);if(n+1>=limit)sweep_ready();return;}
+ if(st==SWEEP_READY){uint64_t ready=atomic_load_explicit(&sweep_ready_ms,memory_order_relaxed);if(ready&&monotonic_ms()-ready>15000){atomic_store_explicit(&sweep_state,SWEEP_IDLE,memory_order_release);st=SWEEP_IDLE;}else return;}
+ if(st==SWEEP_ERROR)return;
+ ring[pos]=s;pos=(pos+1)%N;if(filled<N)filled++;if(++hop>=1024&&filled==N){hop=0;analyze();}
+}
 static void*capture(void*arg){
  const char*dev=arg;void*lib=dlopen("libasound.so.2",RTLD_NOW);
  if(!lib){fail("Missing libasound.so.2");return NULL;}
@@ -63,6 +80,7 @@ static void*capture(void*arg){
   if(r>=0)r=start(p);
   if(r<0){char msg[180];snprintf(msg,sizeof(msg),"ALSA setup: %s",strerr(r));fail(msg);if(p)closepcm(p);}
   else {
+   int failedSweep=SWEEP_ERROR;atomic_compare_exchange_strong_explicit(&sweep_state,&failedSweep,SWEEP_IDLE,memory_order_acq_rel,memory_order_acquire);
    pos=filled=hop=0;
    pthread_mutex_lock(&mutex);mic=0;pthread_mutex_unlock(&mutex);
    while(run){long n=rd(p,buf,1024);if(n<0){char msg[180];snprintf(msg,sizeof(msg),"ALSA read: %s",strerr((int)n));fail(msg);break;}for(long i=0;i<n;i++){uint8_t*q=buf+i*6;int32_t sample24=q[0]|(q[1]<<8)|(q[2]<<16);if(sample24&0x800000)sample24|=(int32_t)0xff000000;sample(sample24/8388608.f);}}
@@ -78,9 +96,30 @@ static const char html[]=
 "<script>const freq=['20','25','31','40','50','63','80','100','125','160','200','250','315','400','500','630','800','1k','1.25k','1.6k','2k','2.5k','3.15k','4k','5k','6.3k','8k','10k','12.5k','16k','20k'];let gain=11,floor=-90,smoothMs=0,hold=true,B=[],shown=Array(31).fill(-120),filtered=Array(31).fill(-120),pkval=Array(31).fill(-120),pktime=Array(31).fill(0),last=performance.now();let attackMs=50,fallRate=33,holdMs=200,peakFall=60;for(let i=0;i<31;i++){let a=document.createElement('div');a.className='bar';let s=document.createElement('div');s.className='stack';let c=[];for(let k=0;k<24;k++){let t=document.createElement('div');t.className='seg';s.append(t);c.push(t)}let pk=document.createElement('div');pk.className='pk';pk.hidden=true;s.append(pk);let f=document.createElement('div');f.className='f';f.textContent=i%2===0||innerWidth>900?freq[i]:'';a.append(s,f);chart.append(a);B.push({c,pk,a});}document.getElementById('setref').onclick=async()=>{let v=Number(document.getElementById('refdb').value);if(!Number.isFinite(v)||v<40||v>120){alert('Enter a known Z-weighted reference level from 40 to 120 dB SPL');return;}if(!confirm('Use '+v.toFixed(1)+' dB SPL as the measured Z-weighted acoustic reference RIGHT NOW? Use a 94 dB acoustic calibrator, or a stable independently measured reference. This is not automatically verified.'))return;let r=await fetch('/api/spl/reference?db='+encodeURIComponent(v),{method:'POST'});if(!r.ok)alert('Reference rejected: '+await r.text());};document.getElementById('clearref').onclick=async()=>{await fetch('/api/spl/clear',{method:'POST'});};document.getElementById('avg').onchange=e=>fetch('/api/average?frames='+e.target.value,{method:'POST'});document.getElementById('floor').oninput=e=>{floor=+e.target.value;flv.textContent=floor+' dBFS';};document.getElementById('smooth').oninput=e=>{smoothMs=+e.target.value;smv.textContent=smoothMs+' ms';};document.getElementById('gain').oninput=e=>{gain=+e.target.value;gv.textContent='+'+gain+' dB';};document.getElementById('attack').oninput=e=>{attackMs=+e.target.value;av.textContent=attackMs+' ms';};document.getElementById('fall').oninput=e=>{fallRate=+e.target.value;fv.textContent=fallRate+' dB/s';};document.getElementById('holdms').oninput=e=>{holdMs=+e.target.value;hv.textContent=holdMs+' ms';};document.getElementById('peakfall').oninput=e=>{peakFall=+e.target.value;pv.textContent=peakFall+' dB/s';};document.getElementById('hold').onclick=()=>{hold=!hold;document.getElementById('hold').textContent='PEAK HOLD '+(hold?'ON':'OFF');};reset.onclick=()=>{pkval=shown.slice();pktime.fill(performance.now());fetch('/api/reset',{method:'POST'});};function h(x){return Math.max(0,Math.min(24,Math.round((x+gain-floor)*24/-floor)))}async function tick(){try{let d=await(await fetch('/api/spectrum',{cache:'no-store'})).json();state.textContent=d.ok?'MIC LIVE':'MIC OFFLINE';error.textContent=d.error;level.textContent='LEVEL '+d.rms.toFixed(1)+' dBFS';spl.textContent=d.spl_reference_applied?'LZ '+d.spl_z.toFixed(1)+' dB · LA '+d.spl_a.toFixed(1)+' dB · '+(d.spl_reference_type==='cli'?'EXTERNAL ANCHOR':'USER REF'):'SPL PROVISIONAL · set measured reference';let now=performance.now(),dt=Math.min((now-last)/1000,0.5);last=now;for(let i=0;i<31;i++){let target=d.level[i];B[i].a.hidden=(document.getElementById('mode').value==='16'&&i%2===1);if(document.getElementById('mode').value==='16'){if(i%2===0)target=10*Math.log10((Math.pow(10,target/10)+Math.pow(10,d.level[Math.min(i+1,30)]/10)));}let sa=smoothMs===0?1:1-Math.exp(-dt*1000/smoothMs);filtered[i]+=sa*(target-filtered[i]);target=filtered[i];if(target>shown[i]){let alpha=attackMs===0?1:1-Math.exp(-dt*1000/attackMs);shown[i]+=alpha*(target-shown[i]);}else shown[i]=Math.max(target,shown[i]-fallRate*dt);if(shown[i]>pkval[i]){pkval[i]=shown[i];pktime[i]=now;}else if(now-pktime[i]>holdMs)pkval[i]=Math.max(shown[i],pkval[i]-peakFall*dt);let n=h(shown[i]),p=h(pkval[i]);for(let j=0;j<24;j++)B[i].c[j].className='seg'+(j<n?' on':'');B[i].pk.hidden=!hold||p===0;B[i].pk.style.bottom=(p*100/24)+'%';}}catch(e){state.textContent='DISCONNECTED'}setTimeout(tick,80)}tick();</script>";
 static void sendall(int fd,const char*str){size_t len=strlen(str);while(len){ssize_t n=send(fd,str,len,0);if(n<=0)return;str+=n;len-=n;}}
 static void reply(int fd,const char*type,const char*data){char h[256];snprintf(h,sizeof h,"HTTP/1.1 200 OK\r\nContent-Type: %s\r\nContent-Length: %zu\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n",type,strlen(data));sendall(fd,h);sendall(fd,data);}
+static void sendbytes(int fd,const void*data,size_t len){const char*p=data;while(len){ssize_t n=send(fd,p,len,MSG_NOSIGNAL);if(n<=0)return;p+=n;len-=(size_t)n;}}
+static void put_le32(uint8_t*p,uint32_t v){p[0]=(uint8_t)v;p[1]=(uint8_t)(v>>8);p[2]=(uint8_t)(v>>16);p[3]=(uint8_t)(v>>24);}
+static const char*sweep_name(int s){switch(s){case SWEEP_ARMED:return "ARMED";case SWEEP_CAPTURING:return "CAPTURING";case SWEEP_STOP_REQUESTED:return "STOPPING";case SWEEP_READY:return "READY";case SWEEP_ERROR:return "ERROR";default:return "IDLE";}}
 static void handle(int fd){
  char req[1024];int n=recv(fd,req,sizeof(req)-1,0);if(n<=0)return;req[n]=0;
- if(!strncmp(req,"GET /api/spectrum ",18)){
+ if(!strncmp(req,"POST /api/sweep/arm?seconds=",28)){
+  double seconds=0;int parsed=sscanf(req,"POST /api/sweep/arm?seconds=%lf",&seconds);int state=atomic_load_explicit(&sweep_state,memory_order_acquire);int ok=0;
+  pthread_mutex_lock(&mutex);int capturing=mic;pthread_mutex_unlock(&mutex);
+  if(parsed==1&&isfinite(seconds)&&seconds>=0.1&&seconds<=30.0&&capturing&&(state==SWEEP_IDLE||state==SWEEP_ERROR)){
+   unsigned limit=(unsigned)ceil(seconds*48000.0);if(limit<=SWEEP_MAX_FRAMES){atomic_store(&sweep_frames,0);atomic_store(&sweep_clips,0);atomic_store(&sweep_limit,limit);atomic_store_explicit(&sweep_state,SWEEP_ARMED,memory_order_release);ok=1;}
+  }
+  char b[160];snprintf(b,sizeof b,"{\"ok\":%s,\"state\":\"%s\",\"sample_rate_hz\":48000}",ok?"true":"false",sweep_name(atomic_load(&sweep_state)));reply(fd,"application/json",b);
+ }else if(!strncmp(req,"GET /api/sweep/status ",22)){
+  char b[180];snprintf(b,sizeof b,"{\"state\":\"%s\",\"samples\":%u,\"clipped_samples\":%u,\"sample_rate_hz\":48000}",sweep_name(atomic_load_explicit(&sweep_state,memory_order_acquire)),atomic_load_explicit(&sweep_frames,memory_order_acquire),atomic_load(&sweep_clips));reply(fd,"application/json",b);
+ }else if(!strncmp(req,"POST /api/sweep/finish ",23)||!strncmp(req,"POST /api/sweep/cancel ",23)){
+  int cancel=!strncmp(req,"POST /api/sweep/cancel ",23);int st=atomic_load_explicit(&sweep_state,memory_order_acquire);if(st==SWEEP_ARMED||st==SWEEP_CAPTURING)atomic_store_explicit(&sweep_state,SWEEP_STOP_REQUESTED,memory_order_release);
+  for(int i=0;i<100&&atomic_load_explicit(&sweep_state,memory_order_acquire)==SWEEP_STOP_REQUESTED;i++){struct timespec pause={0,10000000};nanosleep(&pause,NULL);}
+  st=atomic_load_explicit(&sweep_state,memory_order_acquire);if(cancel&&(st==SWEEP_READY||st==SWEEP_ERROR)){atomic_store_explicit(&sweep_state,SWEEP_IDLE,memory_order_release);st=SWEEP_IDLE;}char b[180];snprintf(b,sizeof b,"{\"ok\":%s,\"state\":\"%s\",\"samples\":%u,\"clipped_samples\":%u}",cancel?(st==SWEEP_IDLE?"true":"false"):(st==SWEEP_READY?"true":"false"),sweep_name(st),atomic_load(&sweep_frames),atomic_load(&sweep_clips));reply(fd,"application/json",b);
+ }else if(!strncmp(req,"GET /api/sweep/capture.wav ",27)){
+  unsigned count=atomic_load_explicit(&sweep_frames,memory_order_acquire);int st=atomic_load_explicit(&sweep_state,memory_order_acquire);
+  if(st!=SWEEP_READY||count>SWEEP_MAX_FRAMES){reply(fd,"application/json","{\"ok\":false,\"error\":\"no completed capture\"}");return;}
+  uint8_t h[44]={0};memcpy(h,"RIFF",4);put_le32(h+4,36+count*4);memcpy(h+8,"WAVEfmt ",8);put_le32(h+16,16);h[20]=3;h[22]=1;put_le32(h+24,48000);put_le32(h+28,192000);h[32]=4;h[34]=32;memcpy(h+36,"data",4);put_le32(h+40,count*4);
+  char head[256];int hn=snprintf(head,sizeof head,"HTTP/1.1 200 OK\r\nContent-Type: audio/wav\r\nContent-Length: %u\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n",44+count*4);sendbytes(fd,head,(size_t)hn);sendbytes(fd,h,sizeof h);sendbytes(fd,sweep_capture,(size_t)count*4);atomic_store_explicit(&sweep_state,SWEEP_IDLE,memory_order_release);
+ }else if(!strncmp(req,"GET /api/spectrum ",18)){
   char b[2500],sf[32];int off;pthread_mutex_lock(&mutex);
   if(isfinite(mic_sens_factor))snprintf(sf,sizeof sf,"%.4f",mic_sens_factor);else strcpy(sf,"null");
   off=snprintf(b,sizeof(b),"{\"ok\":%s,\"rms_dbfs\":%.2f,\"z_corrected_dbfs\":%.2f,\"a_corrected_dbfs\":%.2f,\"sensitivity_factor_db\":%s,\"orientation\":%d,\"analysis_average_frames\":%d,\"spl_z\":",mic?"true":"false",rms,z_dbfs,a_dbfs,sf,active_orientation,analysis_avg);
