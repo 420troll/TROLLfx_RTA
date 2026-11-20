@@ -152,8 +152,30 @@ def root(entries):
 def tab(name, idx, entries, sub=0):
     return {"version":1,"tabName":name,"fnKeyIndex":idx,"fnKeySubIndex":sub,"componentDefinition":root(entries),"qlinkBoundsData":[]}
 
+def draw_touch_button(stem, title, width, height):
+    """Generate matching states for the SDK's native, parameter-bound Button."""
+    for active in (False, True):
+        im=Image.new("RGBA",(width,height),(25,10,14,255))
+        d=ImageDraw.Draw(im)
+        fill=(119,23,35,255) if active else (38,18,24,255)
+        outline=(255,110,118,255) if active else (137,56,66,255)
+        d.rounded_rectangle((2,2,width-3,height-3),radius=9,fill=fill,outline=outline,width=3)
+        d.text((width//2,height//2),title,font=font(22,True),anchor="mm",fill=(255,246,242,255))
+        im.save(os.path.join(ROOT,stem+("_on.png" if active else "_off.png")))
+
+def touch_button(stem,index,x,y,width,height,button_id=1,group_size=1):
+    data={"version":2,"onImage":stem+"_on.png","offImage":stem+"_off.png",
+          "buttonId":button_id,"numButtonsInGroup":group_size,
+          "handleName":"Data","gestureBehaviour":"Instant"}
+    return entry(stem,"Button",data,f"{x} {y} {width} {height}",index,"Yes")
+
 def main():
     ladder("led-ladder.png"); ladder("peak-ladder.png",True)
+    draw_touch_button("sweep-start-touch","START SWEEP",350,84)
+    draw_touch_button("sweep-cancel-touch","CANCEL / FADE",350,84)
+    for slot,label in enumerate(["LATEST","PREVIOUS 2","PREVIOUS 3","PREVIOUS 4",
+                                 "PREVIOUS 5","PREVIOUS 6","PREVIOUS 7","PREVIOUS 8"]):
+        draw_touch_button("sweep-slot-"+str(slot),label,230,76)
     centers31=["20","25","31","40","50","63","80","100","125","160","200","250","315","400","500","630","800","1k","1k2","1k6","2k","2k5","3k1","4k","5k","6k3","8k","10k","12k","16k","20k"]
     centers16=["20","31","50","80","125","200","315","500","800","1k2","2k","3k1","5k","8k","12k","20k"]
     panel("panel31.png",centers31,"31 BAND / 1-3 OCT")
@@ -183,7 +205,8 @@ def main():
     sweep_entries=[]
     for idx,label,x in [(115,"GENERATE / START SWEEP",55),(116,"CANCEL / FADE OUT",455)]:
         sweep_entries.append(entry("sweepLabel"+str(idx),"Label",{"version":1,"textStyle":text_style(22,"ffff7777"),"type":"Text","handleName":"Invalid","text":label},f"{x} 54 350 34"))
-        sweep_entries.append(entry("sweepButton"+str(idx),"Slider",{"version":1,"handleName":"Data"},f"{x} 92 350 84",idx,"Yes"))
+        stem="sweep-start-touch" if idx==115 else "sweep-cancel-touch"
+        sweep_entries.append(touch_button(stem,idx,x,92,350,84))
     sweep_entries.append(entry("sweepStatusLabel","Label",{"version":1,"textStyle":text_style(18,"ffff7777"),"type":"Text","handleName":"Invalid","text":"MEASUREMENT STATUS"},"865 54 350 34"))
     sweep_entries.append(label_entry("sweepStatus",117,865,92,350,84,size=26,color="ffff9b55"))
     for slot,(idx,label) in enumerate([(118,"DURATION (s)"),(119,"START FREQUENCY (Hz)"),(120,"STOP FREQUENCY (Hz)"),(121,"SAFE PEAK LEVEL (dBFS)")]):
@@ -246,6 +269,22 @@ def main():
         graph_entries.append(entry("graphResultLabel"+str(idx),"Label",{"version":1,"textStyle":text_style(12,"ffff7777",bold=True),"type":"Text","handleName":"Invalid","text":label},f"{x} 515 230 18"))
         graph_entries.append(entry("graphResultControl"+str(idx),"Slider",{"version":1,"handleName":"Data"},f"{x} 534 230 46",idx,"Yes"))
     tabs.append(tab("SWEEP GRAPH",5,graph_entries,1))
+    # Saved-measurement selection is an eight-position choice (parameter 123).
+    # SDK Button radio group uses zero-based IDs and does not alter session data.
+    slot_entries=[entry("slotsBackground","Image",
+                        {"version":2,"imageType":"Regular","colour":"0","image":"sweep-led-panel.png"},
+                        "0 0 1280 628")]
+    slot_entries.append(entry("slotsTitle","Label",
+                              {"version":1,"textStyle":text_style(26,"ffffaaaa",bold=True),
+                               "type":"Text","handleName":"Invalid",
+                               "text":"SELECT SAVED SWEEP · NO RECORDING OR OVERWRITE"},
+                              "80 72 1120 52"))
+    for slot in range(8):
+        x=96+(slot%4)*270
+        y=176+(slot//4)*155
+        slot_entries.append(touch_button("sweep-slot-"+str(slot),123,x,y,230,76,slot,8))
+    slot_entries.append(label_entry("slotsStatus",217,825,532,270,38,size=20,color="ffff9b55"))
+    tabs.append(tab("SAVED SWEEPS",5,slot_entries,2))
     level_entries=[]
     bg=Image.new("RGBA",(1280,628),(8,4,5,255)); d=ImageDraw.Draw(bg)
     d.rectangle((0,0,1279,61),fill=(18,5,7,255));d.line((0,61,1279,61),fill=(115,24,31,255),width=2)
@@ -265,6 +304,8 @@ def main():
         if tab_data["tabName"]=="SWEEP":
             for n,idx in enumerate((118,119,120,121),1): assignments[f"Q-Link {n}"]=idx
             assignments["Q-Link 5"]=122; assignments["Q-Link 6"]=123
+        if tab_data["tabName"] == "SAVED SWEEPS":
+            assignments["Q-Link 6"]=123
         if tab_data["tabName"] in ("SWEEP LED RESULTS","SWEEP GRAPH"):
             assignments["Q-Link 5"]=122; assignments["Q-Link 6"]=123
             assignments["Q-Link 7"]=250; assignments["Q-Link 8"]=251
