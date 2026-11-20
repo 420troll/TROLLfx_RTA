@@ -16,5 +16,11 @@ for maps in /proc/[0-9]*/maps; do
         exit 1
     fi
 done
-failed="$root/.trollfx-rta-v056-failed-$(date -u +%Y%m%dT%H%M%S%NZ)"; mv -- "$target" "$failed"; mv -- "$backup/$name" "$target"
-echo "Restored backed-up RTA at $target; V0.5.6 retained at $failed"
+failed="$drive/TROLLfx-RTA-backups/V056-failed-$(date -u +%Y%m%dT%H%M%S%NZ)"; mkdir -p "$failed"
+mv -- "$target" "$failed/$name"
+if ! mv -- "$backup/$name" "$target"; then
+    mv -- "$failed/$name" "$target"
+    echo "Rollback restore failed; V0.5.6 was returned to $target." >&2
+    exit 1
+fi
+echo "Restored backed-up RTA at $target; V0.5.6 retained outside VST2 Plugins at $failed/$name"
