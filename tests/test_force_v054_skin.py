@@ -14,7 +14,7 @@ def handle(e):
 
 def main():
     manifest=json.loads((ROOT/"plugins/TrollfxRta/plugin.json").read_text())
-    assert (manifest["version"],manifest["uid"],manifest["numInputs"],manifest["numOutputs"])==("0.5.4","TfRA",2,2)
+    assert (manifest["version"],manifest["uid"],manifest["numInputs"],manifest["numOutputs"])==("0.5.5","TfRA",2,2)
     tabs=json.loads((SKIN/"TUI.json").read_text())["pageData"]["tabs"]
     assert {t["tabName"] for t in tabs}>={"SWEEP LED RESULTS","SWEEP GRAPH"}
     led_t=next(t for t in tabs if t["tabName"]=="SWEEP LED RESULTS")
@@ -70,6 +70,6 @@ def main():
     for sub in (1,2):
         m=next(x for x in resultmaps if (x["Tab"],x["SubTab"])==(6,sub))["Q-Links"]
         assert [m[f"Q-Link {i}"] for i in (5,6,7,8)]==[122,123,250,251]
-    print("PASS V0.5.4 skin: full-range 31-band results and connected 256-point high-resolution graph via a supported parameter-bound image strip")
+    print("PASS V0.5.5 skin preserves V0.5.4 full-range 31-band results and connected 256-point high-resolution graph via a parameter-bound image strip")
 
 if __name__=="__main__": main()

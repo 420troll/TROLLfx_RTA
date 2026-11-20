@@ -57,7 +57,7 @@ def panel(filename, centers, title):
 def response_panel(filename, mode):
     im=Image.new("RGBA",(1280,628),(8,4,5,255)); d=ImageDraw.Draw(im)
     d.rectangle((0,0,1279,47),fill=(18,5,7,255));d.line((0,47,1279,47),fill=(115,24,31,255),width=2)
-    d.text((22,9),"TROLLfx / RTA  ·  V0.5.4  ·  BUILD 504",font=font(22,True),fill=(255,75,76,255))
+    d.text((22,9),"TROLLfx / RTA  ·  V0.5.5  ·  BUILD 505",font=font(22,True),fill=(255,75,76,255))
     d.text((708,14),mode,font=font(17,True),fill=(220,108,104,255))
     if mode == "SWEEP LED RESULTS":
         x0,x1,y0,y1=70,1008,58,450

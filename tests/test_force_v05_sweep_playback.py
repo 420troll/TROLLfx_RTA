@@ -20,6 +20,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
     capture_wav = b""
     arm_count = 0
+    cancel_count = 0
 
     def log_message(self, *_args):
         pass
@@ -56,14 +57,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
         elif self.path == "/api/sweep/finish":
             self.reply('{"ok":true,"state":"READY","samples":100,"clipped_samples":0}')
         elif self.path == "/api/sweep/cancel":
+            Handler.cancel_count += 1
             self.reply('{"ok":true,"state":"IDLE"}')
         else:
             self.send_error(404)
 
 
 def main():
-    if len(sys.argv) != 4:
-        raise SystemExit("usage: test_force_v05_sweep_playback.py HOST_TEST VST_SO CAPTURE_WAV")
+    if len(sys.argv) not in (4, 5):
+        raise SystemExit("usage: test_force_v05_sweep_playback.py HOST_TEST VST_SO CAPTURE_WAV [--sweep-cancel]")
+    mode = sys.argv[4] if len(sys.argv) == 5 else "--sweep-playback"
+    if mode not in ("--sweep-playback", "--sweep-cancel"):
+        raise SystemExit(f"unknown host test mode: {mode}")
     port = free_port()
     server = http.server.ThreadingHTTPServer(("127.0.0.1", port), Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
@@ -74,16 +79,24 @@ def main():
     try:
         sessions = pathlib.Path(sys.argv[2]).resolve().parent.parent / "Service" / "sessions"
         sessions.mkdir(parents=True, exist_ok=True)
-        for name, peak in (("sweep-0001", 0.25), ("sweep-0002", 1.0)):
+        import math
+        for slot, response_db in enumerate((-30, -24, -21, -18, -15, -12, -6, 6), 1):
+            name = f"sweep-{slot:013d}"
+            peak = 0.5 * 10 ** (response_db / 20)
             old = sessions / name; old.mkdir(exist_ok=True)
             (old / "frequency-response.csv").write_text(
                 "frequency_hz,magnitude,gain_db,phase_rad\n"
-                f"20,0.5,-6.0206,0\n1000,0.5,-6.0206,0\n5000,{peak},{20*__import__('math').log10(peak)},0\n20000,0.5,-6.0206,0\n")
+                f"20,0.5,-6.0206,0\n1000,0.5,-6.0206,0\n5000,{peak},{20*math.log10(peak)},0\n20000,0.5,-6.0206,0\n")
             (old / "measurement.json").write_text('{"format":"V0.5 legacy","clipped_samples":0}\n')
-        result = subprocess.run([sys.argv[1], pathlib.Path(sys.argv[2]).resolve(), "--sweep-playback"],
+        result = subprocess.run([sys.argv[1], pathlib.Path(sys.argv[2]).resolve(), mode],
                                 env=env, timeout=90, check=False)
         if result.returncode:
             raise SystemExit(result.returncode)
+        if mode == "--sweep-cancel":
+            if Handler.arm_count != 1 or Handler.cancel_count != 1:
+                raise SystemExit(f"momentary button reset retriggered service action: arm={Handler.arm_count} cancel={Handler.cancel_count}")
+            print("PASS CANCEL control delivered one arm and one cancel without a reset-triggered repeat")
+            return
         found = sorted(sessions.glob("sweep-*/measurement.json"))
         if not found:
             raise SystemExit("VST worker completed without saving measurement.json")
@@ -95,11 +108,11 @@ def main():
         metadata = json.loads((session / "measurement.json").read_text())
         if not metadata.get("marker_alignment_valid"):
             raise SystemExit("saved sweep session lacks valid two-marker alignment")
-        if metadata.get("response_smoothing_octaves") is not None:
-            raise SystemExit("changing smoothing did not reprocess the selected session")
+        if metadata.get("response_smoothing_octaves") != 3:
+            raise SystemExit("changing smoothing did not reprocess the latest selected session at 1/3 octave")
         if Handler.arm_count != 1:
             raise SystemExit(f"smoothing change restarted sweep capture {Handler.arm_count} times")
-        previous_two = json.loads((sessions / "sweep-0002" / "measurement.json").read_text())
+        previous_two = json.loads((sessions / "sweep-0000000000008" / "measurement.json").read_text())
         if previous_two.get("smoothing_algorithm_version") != 1 or "response_smoothing_octaves" not in previous_two:
             raise SystemExit("saved-measurement selection did not reprocess Previous 2")
         print(f"PASS completed VST sweep saved aligned response, IR and graphs at {session}")

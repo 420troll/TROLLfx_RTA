@@ -4267,11 +4267,16 @@
               "version": 2,
               "componentData": {
                 "version": 1,
-                "name": "sweepButton115",
-                "type": "Slider",
+                "name": "sweep-start-touch",
+                "type": "Button",
                 "data": {
-                  "version": 1,
-                  "handleName": "Data"
+                  "version": 2,
+                  "onImage": "sweep-start-touch_on.png",
+                  "offImage": "sweep-start-touch_off.png",
+                  "buttonId": 1,
+                  "numButtonsInGroup": 1,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
                 }
               },
               "handle remapping": {
@@ -4334,11 +4339,16 @@
               "version": 2,
               "componentData": {
                 "version": 1,
-                "name": "sweepButton116",
-                "type": "Slider",
+                "name": "sweep-cancel-touch",
+                "type": "Button",
                 "data": {
-                  "version": 1,
-                  "handleName": "Data"
+                  "version": 2,
+                  "onImage": "sweep-cancel-touch_on.png",
+                  "offImage": "sweep-cancel-touch_off.png",
+                  "buttonId": 1,
+                  "numButtonsInGroup": 1,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
                 }
               },
               "handle remapping": {
@@ -18784,6 +18794,412 @@
                 "whenVisible": "Always",
                 "boundsType": "Absolute",
                 "bounds": "761 534 230 46"
+              }
+            }
+          ]
+        },
+        "qlinkBoundsData": []
+      },
+      {
+        "version": 1,
+        "tabName": "SAVED SWEEPS",
+        "fnKeyIndex": 5,
+        "fnKeySubIndex": 2,
+        "componentDefinition": {
+          "version": 2,
+          "actions": [],
+          "backgroundData": {
+            "version": 1,
+            "focussed": {
+              "version": 1,
+              "colour": "ff080405",
+              "image": ""
+            },
+            "unfocussed": {
+              "version": 1,
+              "colour": "ff080405",
+              "image": ""
+            }
+          },
+          "ignoreMousePresses": false,
+          "disableCoarseDataWheel": false,
+          "componentsData": [
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "slotsBackground",
+                "type": "Image",
+                "data": {
+                  "version": 2,
+                  "imageType": "Regular",
+                  "colour": "0",
+                  "image": "sweep-led-panel.png"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "0 0 1280 628"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "slotsTitle",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "Bold",
+                      "height": 26.0
+                    },
+                    "colour": "ffffaaaa",
+                    "justification": "left verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Text",
+                  "handleName": "Invalid",
+                  "text": "SELECT SAVED SWEEP \u00b7 NO RECORDING OR OVERWRITE"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": []
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Show",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "80 72 1120 52"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweep-slot-0",
+                "type": "Button",
+                "data": {
+                  "version": 2,
+                  "onImage": "sweep-slot-0_on.png",
+                  "offImage": "sweep-slot-0_off.png",
+                  "buttonId": 0,
+                  "numButtonsInGroup": 8,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 123"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "96 176 230 76"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweep-slot-1",
+                "type": "Button",
+                "data": {
+                  "version": 2,
+                  "onImage": "sweep-slot-1_on.png",
+                  "offImage": "sweep-slot-1_off.png",
+                  "buttonId": 1,
+                  "numButtonsInGroup": 8,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 123"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "366 176 230 76"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweep-slot-2",
+                "type": "Button",
+                "data": {
+                  "version": 2,
+                  "onImage": "sweep-slot-2_on.png",
+                  "offImage": "sweep-slot-2_off.png",
+                  "buttonId": 2,
+                  "numButtonsInGroup": 8,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 123"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "636 176 230 76"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweep-slot-3",
+                "type": "Button",
+                "data": {
+                  "version": 2,
+                  "onImage": "sweep-slot-3_on.png",
+                  "offImage": "sweep-slot-3_off.png",
+                  "buttonId": 3,
+                  "numButtonsInGroup": 8,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 123"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "906 176 230 76"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweep-slot-4",
+                "type": "Button",
+                "data": {
+                  "version": 2,
+                  "onImage": "sweep-slot-4_on.png",
+                  "offImage": "sweep-slot-4_off.png",
+                  "buttonId": 4,
+                  "numButtonsInGroup": 8,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 123"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "96 331 230 76"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweep-slot-5",
+                "type": "Button",
+                "data": {
+                  "version": 2,
+                  "onImage": "sweep-slot-5_on.png",
+                  "offImage": "sweep-slot-5_off.png",
+                  "buttonId": 5,
+                  "numButtonsInGroup": 8,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 123"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "366 331 230 76"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweep-slot-6",
+                "type": "Button",
+                "data": {
+                  "version": 2,
+                  "onImage": "sweep-slot-6_on.png",
+                  "offImage": "sweep-slot-6_off.png",
+                  "buttonId": 6,
+                  "numButtonsInGroup": 8,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 123"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "636 331 230 76"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "sweep-slot-7",
+                "type": "Button",
+                "data": {
+                  "version": 2,
+                  "onImage": "sweep-slot-7_on.png",
+                  "offImage": "sweep-slot-7_off.png",
+                  "buttonId": 7,
+                  "numButtonsInGroup": 8,
+                  "handleName": "Data",
+                  "gestureBehaviour": "Instant"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 123"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "Yes",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "906 331 230 76"
+              }
+            },
+            {
+              "version": 2,
+              "componentData": {
+                "version": 1,
+                "name": "slotsStatus",
+                "type": "Label",
+                "data": {
+                  "version": 1,
+                  "textStyle": {
+                    "version": 1,
+                    "font": {
+                      "version": 1,
+                      "name": "Titillium Web",
+                      "style": "Regular",
+                      "height": 20.0
+                    },
+                    "colour": "ffff9b55",
+                    "justification": "left verticallyCentred",
+                    "case": "Original"
+                  },
+                  "type": "Value",
+                  "handleName": "Data"
+                }
+              },
+              "handle remapping": {
+                "version": 1,
+                "map": [
+                  {
+                    "key": "Data",
+                    "value": "Parameter 217"
+                  }
+                ]
+              },
+              "bounds": {
+                "version": 1,
+                "acceptsHWFocus": "No",
+                "showWhenDataModelInvalid": "Hide",
+                "whenVisible": "Always",
+                "boundsType": "Absolute",
+                "bounds": "825 532 270 38"
               }
             }
           ]

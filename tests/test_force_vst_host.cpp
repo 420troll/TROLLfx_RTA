@@ -41,7 +41,7 @@ int main(int argc,char**argv) {
         e->dispatcher(e,effMainsChanged,0,1,nullptr,0);
     }
     if(a->numParams!=607){std::printf("FAIL appended V0.5.4 parameter count: %d\n",a->numParams);return 1;}
-    if(a->dispatcher(a,effGetVendorVersion,0,0,nullptr,0.0f)!=504){std::puts("FAIL V0.5.4 build version");return 1;}
+    if(a->dispatcher(a,effGetVendorVersion,0,0,nullptr,0.0f)!=505){std::puts("FAIL V0.5.5 build version");return 1;}
     char parameterName[64]{};a->dispatcher(a,effGetParamName,110,0,parameterName,0.0f);
     if(std::strcmp(parameterName,"Peak Fall")!=0){std::printf("FAIL V0.3 parameter ordering changed at 110: %s\n",parameterName);return 1;}
     a->dispatcher(a,effGetParamName,111,0,parameterName,0.0f);
@@ -67,6 +67,37 @@ int main(int argc,char**argv) {
         auto display=[&](AEffect* e,int index){char out[64]{};e->dispatcher(e,effGetParamDisplay,index,0,out,0.0f);return std::string(out);};
         auto waitDisplay=[&](int index,const char* expected,int timeoutMs){const auto deadline=std::chrono::steady_clock::now()+std::chrono::milliseconds(timeoutMs);while(display(a,index)!=expected&&std::chrono::steady_clock::now()<deadline)std::this_thread::sleep_for(std::chrono::milliseconds(10));return display(a,index)==expected;};
         auto waitParameter=[&](int index,float expected,float tolerance,int timeoutMs){const auto deadline=std::chrono::steady_clock::now()+std::chrono::milliseconds(timeoutMs);while(std::fabs(a->getParameter(a,index)-expected)>tolerance&&std::chrono::steady_clock::now()<deadline)std::this_thread::sleep_for(std::chrono::milliseconds(10));return std::fabs(a->getParameter(a,index)-expected)<=tolerance;};
+        if(std::strcmp(mode,"--sweep-cancel")==0){
+            a->setParameter(a,118,0.0f);a->setParameter(a,115,1.0f);
+            const auto armed=std::chrono::steady_clock::now()+std::chrono::seconds(5);
+            while(display(a,117)!="CAPTURING"&&std::chrono::steady_clock::now()<armed)std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            if(display(a,117)!="CAPTURING"){std::printf("FAIL cancel test never reached CAPTURING: %s\n",display(a,117).c_str());return 1;}
+            float il[128],ir[128],ol[128]{},orr[128]{};float last=0.0f;bool emitted=false;
+            for(int block=0;block<20&&!emitted;block++){
+                for(int i=0;i<128;i++){il[i]=0.013f;ir[i]=-0.021f;ol[i]=orr[i]=0;}
+                float* in[]={il,ir};float* out[]={ol,orr};a->processReplacing(a,in,out,128);
+                for(int i=0;i<128;i++)if(ol[i]!=il[i]){last=ol[i];emitted=true;break;}
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+            if(!emitted){std::puts("FAIL cancel test did not emit the sweep before CANCEL");return 1;}
+            a->setParameter(a,116,1.0f);
+            if(a->getParameter(a,116)!=0.0f){std::printf("FAIL CANCEL parameter did not reset to zero: %.3f\n",a->getParameter(a,116));return 1;}
+            float tail[512]{};size_t pos=0;
+            while(pos<sizeof(tail)/sizeof(tail[0])){
+                for(int i=0;i<128;i++){il[i]=0.013f;ir[i]=-0.021f;ol[i]=orr[i]=0;}
+                float* in[]={il,ir};float* out[]={ol,orr};a->processReplacing(a,in,out,128);
+                for(int i=0;i<128&&pos<sizeof(tail)/sizeof(tail[0]);i++)tail[pos++]=ol[i];
+            }
+            if(std::fabs(tail[0]-last)>std::max(0.0005f,std::fabs(last)*0.02f)||
+               std::fabs(tail[479])>std::max(0.0005f,std::fabs(last)*0.01f)||
+               std::fabs(tail[480]-0.013f)>1e-6f||std::fabs(tail[481]-0.013f)>1e-6f){
+                std::printf("FAIL CANCEL must fade over 480 samples then pass through: start %.6f/%.6f end %.6f bypass %.6f\n",last,tail[0],tail[479],tail[480]);return 1;
+            }
+            if(!waitDisplay(117,"CANCELLED",3000)){std::printf("FAIL CANCEL state did not settle: %s\n",display(a,117).c_str());return 1;}
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            for(AEffect* e:{a,b}){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);}dlclose(lib);
+            std::puts("PASS touch-equivalent momentary CANCEL resets once, fades over 10 ms across audio blocks, then resumes pass-through");return 0;
+        }
         if(std::strcmp(mode,"--sweep-playback")==0){
             a->setParameter(a,118,0.0f); // minimum 0.5 s sweep; all work remains on the worker
             a->setParameter(a,115,1.0f);
@@ -89,6 +120,7 @@ int main(int argc,char**argv) {
             for(int i=0;i<128;i++)if(ol[i]!=il[i]||orr[i]!=ir[i]){std::puts("FAIL normal pass-through did not resume after sweep error");return 1;}
             a->setParameter(a,122,0.0f); // No Smoothing re-renders the saved result only.
             std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            const float latestSweepResponse=a->getParameter(a,210);
             a->setParameter(a,123,1.0f/7.0f); // Previous 2 selects the older saved measurement.
             if(std::fabs(a->getParameter(a,123)-1.0f/7.0f)>0.01f){std::printf("FAIL saved-measurement selector value %.4f\n",a->getParameter(a,123));return 1;}
             if(!waitParameter(210,1.0f,0.02f,20000)||!waitDisplay(217,"READY",5000)||std::fabs(a->getParameter(a,148)-0.875f)>0.02f||std::fabs(a->getParameter(a,179)-1.0f)>0.02f){std::printf("FAIL selected Previous 2 response values/status: %s led %.3f smooth %.3f raw %.3f\n",display(a,217).c_str(),a->getParameter(a,148),a->getParameter(a,179),a->getParameter(a,210));return 1;}
@@ -97,6 +129,17 @@ int main(int argc,char**argv) {
             a->setParameter(a,123,2.0f/7.0f); // Previous 3 has a distinct 5 kHz response.
             if(!waitParameter(210,2.0f/3.0f,0.03f,20000)||!waitDisplay(217,"READY",5000)||std::fabs(a->getParameter(a,148)-0.625f)>0.03f||std::fabs(a->getParameter(a,210)-previous2Raw)<0.25f){std::printf("FAIL switching to Previous 3 did not update static response curve: %s led %.3f raw %.3f\n",display(a,217).c_str(),a->getParameter(a,148),a->getParameter(a,210));return 1;}
             if(std::fabs(a->getParameter(a,218+24)-a->getParameter(a,124+24))>0.03f){std::puts("FAIL graph peak marker did not follow saved Previous 3 response");return 1;}
+            const float expectedSavedSlots[]={0.0f,1.0f,2.0f/3.0f,0.5f,15.0f/36.0f,12.0f/36.0f,0.25f,1.0f/6.0f};
+            for(int slot=3;slot<8;slot++){
+                a->setParameter(a,123,static_cast<float>(slot)/7.0f);
+                if(!waitParameter(210,expectedSavedSlots[slot],0.025f,20000)||!waitDisplay(217,"READY",5000)){
+                    std::printf("FAIL saved sweep radio value %d selected the wrong session: actual %.3f expected %.3f\n",slot,a->getParameter(a,210),expectedSavedSlots[slot]);return 1;
+                }
+            }
+            a->setParameter(a,123,0.0f); // Latest is the completed sweep; no new capture is armed.
+            if(!waitParameter(210,latestSweepResponse,0.02f,20000)||!waitDisplay(217,"READY",5000)){
+                std::printf("FAIL saved sweep radio value 0 did not restore Latest response %.3f (got %.3f)\n",latestSweepResponse,a->getParameter(a,210));return 1;
+            }
             const float smoothingModes[]={0.0f,0.2f,0.4f,0.6f,0.8f,1.0f};
             for(float mode:smoothingModes){a->setParameter(a,122,mode);std::this_thread::sleep_for(std::chrono::milliseconds(250));}
             if(!waitDisplay(217,"READY",4000)){std::puts("FAIL smoothing/measurement changes lost the displayed result");return 1;}
