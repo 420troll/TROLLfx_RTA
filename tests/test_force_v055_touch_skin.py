@@ -43,7 +43,7 @@ def check_button(component, param, button_id, group_size, expected_text):
 
 def main():
     manifest = json.loads((ROOT / "plugins/TrollfxRta/plugin.json").read_text())
-    assert (manifest["version"], manifest["uid"]) == ("0.5.5", "TfRA")
+    assert (manifest["version"], manifest["uid"]) == ("0.5.6", "TfRA")
     tui = json.loads((SKIN / "TUI.json").read_text())
     tabs = tui["pageData"]["tabs"]
     sweep = next(t for t in tabs if t["tabName"] == "SWEEP")["componentDefinition"]["componentsData"]
@@ -75,7 +75,8 @@ def main():
     generator = (ROOT / "scripts/generate-force-rta-skin.py").read_text()
     for label in ("START SWEEP", "CANCEL / FADE", '"LATEST"', '"PREVIOUS 8"'):
         assert label in generator
-    print("PASS V0.5.5 SDK Button schema, momentary control bindings and 8-step saved-sweep radio group")
+    assert not any("smoothing" in e["componentData"]["name"].lower() for e in sweep)
+    print("PASS V0.5.6 SDK Button schema, momentary controls, 8-step saved-sweep selector and no smoothing UI")
 
 
 if __name__ == "__main__":

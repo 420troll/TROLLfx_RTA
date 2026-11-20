@@ -5,7 +5,7 @@ import math
 import os
 from PIL import Image, ImageDraw, ImageFont
 
-GRAPH_STEPS = 129
+GRAPH_STEPS = 31
 GRAPH_FRAME_COUNT = GRAPH_STEPS * GRAPH_STEPS + 1
 GRAPH_MISSING_FRAME = GRAPH_FRAME_COUNT - 1
 
@@ -57,45 +57,34 @@ def panel(filename, centers, title):
 def response_panel(filename, mode):
     im=Image.new("RGBA",(1280,628),(8,4,5,255)); d=ImageDraw.Draw(im)
     d.rectangle((0,0,1279,47),fill=(18,5,7,255));d.line((0,47,1279,47),fill=(115,24,31,255),width=2)
-    d.text((22,9),"TROLLfx / RTA  ·  V0.5.5  ·  BUILD 505",font=font(22,True),fill=(255,75,76,255))
+    d.text((22,9),"TROLLfx / RTA  ·  V0.5.6  ·  BUILD 506",font=font(22,True),fill=(255,75,76,255))
     d.text((708,14),mode,font=font(17,True),fill=(220,108,104,255))
+    x0,x1,y0,y1=95,1257,64,548
+    d.rectangle((x0,y0,x1,y1),fill=(10,5,6,255),outline=(91,22,27,255),width=2)
     if mode == "SWEEP LED RESULTS":
-        x0,x1,y0,y1=70,1008,58,450
-        d.rectangle((x0,y0,x1,y1),fill=(10,5,6,255),outline=(91,22,27,255),width=2)
         for q in range(5):
             y=y0+q*(y1-y0)/4
             d.line((x0,y,x1,y),fill=(111,31,36,255) if q==2 else (56,25,29,255),width=2 if q==2 else 1)
         centers=["20","25","31","40","50","63","80","100","125","160","200","250","315","400","500","630","800","1k","1k2","1k6","2k","2k5","3k1","4k","5k","6k3","8k","10k","12k","16k","20k"]
-        gap=(x1-x0)/31; width=19; start=x0+(gap-width)/2
+        gap=(x1-x0)/31; width=22; start=x0+(gap-width)/2
         for i,label in enumerate(centers):
             x=start+i*gap+width/2
-            d.text((x,457),label,font=font(11,True),fill=(239,154,151,255),anchor="mt")
-            if i%2==0:d.line((x,450,x,454),fill=(130,51,55,255),width=1)
-        d.text((75,487),"LED LEVEL WINDOW · COMMON SCALE FOR ALL BANDS · RELATIVE TO SMOOTHED 1 kHz",font=font(13,True),fill=(199,89,91,255))
+            d.text((x,556),label,font=font(11,True),fill=(239,154,151,255),anchor="mt")
+            if i%2==0:d.line((x,548,x,552),fill=(130,51,55,255),width=1)
+        d.text((97,49),"AUTO dB RANGE  ·  FIXED 1/6 OCTAVE  ·  RELATIVE TO 1 kHz",font=font(12,True),fill=(187,99,99,255))
     else:
-        x0,x1,y0,y1=74,1008,54,443
-        d.rectangle((x0,y0,x1,y1),fill=(10,5,6,255),outline=(91,22,27,255),width=2)
         def xfreq(hz): return x0+(math.log(hz/20.0)/math.log(1000.0))*(x1-x0)
         for q in range(5):
             y=y0+q*(y1-y0)/4
-            db=12-q*12
-            d.line((x0,y,x1,y),fill=(128,43,49,255) if db==0 else (64,27,31,255),width=2 if db==0 else 1)
+            d.line((x0,y,x1,y),fill=(128,43,49,255) if q==2 else (64,27,31,255),width=2 if q==2 else 1)
         for hz,label in [(20,"20"),(31.5,"31.5"),(50,"50"),(100,"100"),(200,"200"),(500,"500"),(1000,"1k"),(2000,"2k"),(5000,"5k"),(10000,"10k"),(20000,"20k")]:
             x=xfreq(hz);d.line((x,y0,x,y1),fill=(52,25,28,255),width=1)
-            d.text((x,449),label,font=font(12,True),fill=(248,173,169,255),anchor="mt")
-    d.rectangle((18,511,1008,619),fill=(16,7,8,255),outline=(81,25,29,255),width=1)
-    labels=[("SMOOTHING",122),("MEASUREMENT",123),("RANGE",250),("CENTER",251)]
-    for slot,(label,_) in enumerate(labels):
-        x=26+slot*245
-        d.text((x,515),label,font=font(12,True),fill=(210,107,106,255))
-    d.text((26,588),"WINDOW dB re 1 kHz:",font=font(11,True),fill=(196,99,99,255))
-    d.text((219,588),"LOW",font=font(10,True),fill=(176,82,84,255))
-    d.text((396,588),"HIGH",font=font(10,True),fill=(176,82,84,255))
-    d.text((590,588),"Selected saved sweep · display only",font=font(11),fill=(151,96,96,255))
+            d.text((x,556),label,font=font(12,True),fill=(248,173,169,255),anchor="mt")
+        d.text((97,49),"FIXED 1/6-OCTAVE CURVE  ·  AUTO-FIT FULL VALID RESPONSE",font=font(12,True),fill=(187,99,99,255))
     im.save(os.path.join(ROOT,filename))
 
 def graph_segment_strip():
-    """SDK Image filmstrip prototype: frame index packs adjacent y samples."""
+    """Compact pair-coded atlas for one continuous graph trace."""
     width,height=4,64
     strip=Image.new("RGBA",(width,height*GRAPH_FRAME_COUNT),(0,0,0,0))
     draw=ImageDraw.Draw(strip)
@@ -105,18 +94,9 @@ def graph_segment_strip():
             y1=round(bottom*(height-1)/(GRAPH_STEPS-1))
             frame=top*GRAPH_STEPS+bottom
             base=frame*height
-            draw.polygon([(0,base+y0),(width-1,base+y1),(width-1,base+height-1),(0,base+height-1)],fill=(255,35,46,32))
             draw.line([(0,base+y0),(width-1,base+y1)],fill=(255,46,55,255),width=1)
     # Last frame (missing data) remains transparent.
     strip.save(os.path.join(ROOT,"sweep-graph-segments.png"),optimize=True)
-
-def clipping_strip():
-    w,h=24,392; im=Image.new("RGBA",(w,h*4),(0,0,0,0));d=ImageDraw.Draw(im)
-    d.polygon([(1,h+16),(12,h+2),(23,h+16),(19,h+16),(12,h+8),(5,h+16)],fill=(255,142,133,255))
-    d.polygon([(1,2*h+h-17),(12,2*h+h-2),(23,2*h+h-17),(19,2*h+h-17),(12,2*h+h-9),(5,2*h+h-17)],fill=(255,87,78,255))
-    d.line((3,3*h+h//2,20,3*h+h//2),fill=(255,100,76,220),width=3)
-    d.line((3,3*h+h//2-7,20,3*h+h//2+7),fill=(255,100,76,220),width=2)
-    im.save(os.path.join(ROOT,"sweep-clipping.png"))
 
 def entry(name, typ, data, bounds, handle=None, focus="No"):
     remap=[] if handle is None else [{"key":"Data","value":f"Parameter {handle}"}]
@@ -128,14 +108,6 @@ def entry(name, typ, data, bounds, handle=None, focus="No"):
 def image_entry(name, idx, asset, x, y=82, w=28, h=420):
     data={"version":2,"imageType":"FilmStrip","colour":"0","image":asset,"numFrames":25,"handleName":"Data"}
     return entry(name,"Image",data,f"{x} {y} {w} {h}",idx)
-
-def plotter_entry(name, idx, colour, line_width, bounds):
-    data={"version":2,"backgroundColour":"0","drawLine":True,"lineDirection":"Right","tightClip":True,
-          "lineColourStart":colour,"lineColourEnd":colour,"horizLineGradient":False,"lineWidth":line_width,
-          "fillColourStart":"0","fillColourEnd":"0","horizFillGradient":False,"fillZero":-24.0,
-          "dataHandle":"Data","dataMin":-30.0,"dataMax":6.0,"drawHistory":False}
-    data["fillZero"]=-30.0
-    return entry(name,"Plotter",data,bounds,idx)
 
 def text_style(size, color, align="left verticallyCentred", bold=False):
     return {"version":1,"font":{"version":1,"name":"Titillium Web","style":"Bold" if bold else "Regular","height":float(size)},
@@ -213,61 +185,39 @@ def main():
         col=slot%2;row=slot//2;x=55+col*600;y=205+row*125
         sweep_entries.append(entry("sweepParamLabel"+str(slot),"Label",{"version":1,"textStyle":text_style(20,"ffff7777"),"type":"Text","handleName":"Invalid","text":label},f"{x} {y} 520 32"))
         sweep_entries.append(entry("sweepParam"+str(slot),"Slider",{"version":1,"handleName":"Data"},f"{x} {y+38} 520 78",idx,"Yes"))
-    for idx,label,x in [(122,"RESPONSE SMOOTHING",55),(123,"SAVED MEASUREMENT",655)]:
-        sweep_entries.append(entry("sweepOutputLabel"+str(idx),"Label",{"version":1,"textStyle":text_style(19,"ffff7777"),"type":"Text","handleName":"Invalid","text":label},f"{x} 468 550 30"))
-        sweep_entries.append(entry("sweepOutputControl"+str(idx),"Slider",{"version":1,"handleName":"Data"},f"{x} 501 550 54",idx,"Yes"))
-    sweep_entries.append(entry("sweepNote","Label",{"version":1,"textStyle":text_style(15,"ffbb7777"),"type":"Text","handleName":"Invalid","text":"Changes re-render the selected saved session; they do not replay or record a sweep. Results remain under Service/sessions."},"55 574 1160 34"))
     tabs.append(tab("SWEEP",4,sweep_entries))
     response_panel("sweep-led-panel.png","SWEEP LED RESULTS")
-    clipping_strip(); graph_segment_strip()
+    graph_segment_strip()
     led_result_entries=[entry("sweepLedBackground","Image",{"version":2,"imageType":"Regular","colour":"0","image":"sweep-led-panel.png"},"0 0 1280 628")]
-    gap=(1008-70)/31;width=19;start=70+(gap-width)/2
+    led_x0,led_x1,led_y0,led_y1=95,1257,64,548
+    gap=(led_x1-led_x0)/31;width=22;start=led_x0+(gap-width)/2
     for i in range(31):
         x=int(start+i*gap)
-        led_result_entries.append(image_entry("sweepLedBand"+str(i),124+i,"led-ladder.png",x,y=58,w=width,h=392))
-        led_result_entries.append(image_entry("sweepLedPeak"+str(i),218+i,"peak-ladder.png",x,y=58,w=width,h=392))
-        led_result_entries.append(entry("sweepLedClip"+str(i),"Image",{"version":2,"imageType":"FilmStrip","colour":"0","image":"sweep-clipping.png","numFrames":4,"handleName":"Data"},f"{x-2} 58 {width+4} 392",509+i,"No"))
+        led_result_entries.append(image_entry("sweepLedBand"+str(i),124+i,"led-ladder.png",x,y=led_y0,w=width,h=led_y1-led_y0))
     for i in range(5):
-        y=58+i*(450-58)/4
-        led_result_entries.append(label_entry("ledDbTick"+str(i),254+i,14,y-9,50,18,size=11,color="ffff9996",align="right verticallyCentred"))
-    led_result_entries.append(label_entry("ledResultStatus",217,745,12,250,20,size=14,color="ffff9b55"))
-    led_result_entries.append(label_entry("ledSweepDiagnostic",249,745,31,250,14,size=10,color="ffff7777"))
-    # The output values state the active range endpoints; changing the range
-    # or center updates these without changing stored measurement values.
-    led_result_entries.append(entry("ledLowLabel","Label",{"version":1,"textStyle":text_style(11,"ffff7777"),"type":"Value","handleName":"Data"},"243 587 90 22",252,"No"))
-    led_result_entries.append(entry("ledHighLabel","Label",{"version":1,"textStyle":text_style(11,"ffff7777"),"type":"Value","handleName":"Data"},"420 587 90 22",253,"No"))
-    controls=[(122,"SMOOTHING"),(123,"MEASUREMENT"),(250,"RANGE"),(251,"CENTER")]
-    for slot,(idx,label) in enumerate(controls):
-        x=26+slot*245
-        led_result_entries.append(entry("ledResultLabel"+str(idx),"Label",{"version":1,"textStyle":text_style(12,"ffff7777",bold=True),"type":"Text","handleName":"Invalid","text":label},f"{x} 515 230 18"))
-        led_result_entries.append(entry("ledResultControl"+str(idx),"Slider",{"version":1,"handleName":"Data"},f"{x} 534 230 46",idx,"Yes"))
+        y=led_y0+i*(led_y1-led_y0)/4
+        led_result_entries.append(label_entry("ledDbTick"+str(i),254+i,8,y-10,78,20,size=12,color="ffff9996",align="right verticallyCentred"))
+    led_result_entries.append(label_entry("ledResultStatus",217,1012,10,240,22,size=14,color="ffff9b55"))
+    led_result_entries.append(label_entry("ledSweepDiagnostic",249,1012,31,240,16,size=10,color="ffff7777"))
     tabs.append(tab("SWEEP LED RESULTS",5,led_result_entries))
 
     response_panel("sweep-graph-panel.png","SWEEP GRAPH")
     graph_entries=[entry("sweepGraphBackground","Image",{"version":2,"imageType":"Regular","colour":"0","image":"sweep-graph-panel.png"},"0 0 1280 628")]
-    graph_x0,graph_x1,graph_y0,graph_y1=74,1008,54,443
+    graph_x0,graph_x1,graph_y0,graph_y1=95,1257,64,548
     segment_gap=(graph_x1-graph_x0)/255.0
     # A connected 256-sample polyline. Each documented Image film-strip
     # component selects a pre-rendered segment frame encoding adjacent y bins.
-    # Frames share a 129x129 endpoint lookup and alpha-filled area image.
+    # 31-by-31 endpoint lookup: 962 frames, 61,568 px high instead of the
+    # V0.5.5 atlas's 16,642 frames and 1,065,088 px height. It draws a line only.
     for i in range(255):
         bounds=f"{graph_x0+i*segment_gap:.4f} {graph_y0} {segment_gap+0.04:.4f} {graph_y1-graph_y0}"
         data={"version":2,"imageType":"FilmStrip","colour":"0","image":"sweep-graph-segments.png","numFrames":GRAPH_FRAME_COUNT,"handleName":"Data"}
         graph_entries.append(entry(f"graphLineSegment{i}","Image",data,bounds,259+i,"No"))
-    for i in range(31):
-        hz=20.0*1000.0**(i/30.0);x=graph_x0+math.log(hz/20.0)/math.log(1000.0)*(graph_x1-graph_x0)
-        graph_entries.append(entry("graphClip"+str(i),"Image",{"version":2,"imageType":"FilmStrip","colour":"0","image":"sweep-clipping.png","numFrames":4,"handleName":"Data"},f"{x-9:.2f} {graph_y0} 18 {graph_y1-graph_y0}",509+i,"No"))
     for i in range(5):
         y=graph_y0+i*(graph_y1-graph_y0)/4
         graph_entries.append(label_entry("graphDbTick"+str(i),254+i,14,y-9,52,18,size=12,color="ffff9996",align="right verticallyCentred"))
-    graph_entries.append(label_entry("graphResultStatus",217,745,12,250,20,size=14,color="ffff9b55"))
-    graph_entries.append(label_entry("graphSweepDiagnostic",249,745,31,250,14,size=10,color="ffff7777"))
-    graph_entries.append(entry("graphLowLabel","Label",{"version":1,"textStyle":text_style(11,"ffff7777"),"type":"Value","handleName":"Data"},"243 587 90 22",252,"No"))
-    graph_entries.append(entry("graphHighLabel","Label",{"version":1,"textStyle":text_style(11,"ffff7777"),"type":"Value","handleName":"Data"},"420 587 90 22",253,"No"))
-    for slot,(idx,label) in enumerate([(122,"SMOOTHING"),(123,"MEASUREMENT"),(250,"RANGE"),(251,"CENTER")]):
-        x=26+slot*245
-        graph_entries.append(entry("graphResultLabel"+str(idx),"Label",{"version":1,"textStyle":text_style(12,"ffff7777",bold=True),"type":"Text","handleName":"Invalid","text":label},f"{x} 515 230 18"))
-        graph_entries.append(entry("graphResultControl"+str(idx),"Slider",{"version":1,"handleName":"Data"},f"{x} 534 230 46",idx,"Yes"))
+    graph_entries.append(label_entry("graphResultStatus",217,1012,10,240,22,size=14,color="ffff9b55"))
+    graph_entries.append(label_entry("graphSweepDiagnostic",249,1012,31,240,16,size=10,color="ffff7777"))
     tabs.append(tab("SWEEP GRAPH",5,graph_entries,1))
     # Saved-measurement selection is an eight-position choice (parameter 123).
     # SDK Button radio group uses zero-based IDs and does not alter session data.
@@ -303,15 +253,16 @@ def main():
             assignments["Q-Link 11"]=111; assignments["Q-Link 12"]=112; assignments["Q-Link 13"]=113
         if tab_data["tabName"]=="SWEEP":
             for n,idx in enumerate((118,119,120,121),1): assignments[f"Q-Link {n}"]=idx
-            assignments["Q-Link 5"]=122; assignments["Q-Link 6"]=123
+            assignments["Q-Link 5"]=123
         if tab_data["tabName"] == "SAVED SWEEPS":
             assignments["Q-Link 6"]=123
-        if tab_data["tabName"] in ("SWEEP LED RESULTS","SWEEP GRAPH"):
-            assignments["Q-Link 5"]=122; assignments["Q-Link 6"]=123
-            assignments["Q-Link 7"]=250; assignments["Q-Link 8"]=251
+        if tab_data["tabName"] in ("SWEEP LED RESULTS", "SWEEP GRAPH"):
+            # Keep the result pages uncluttered while allowing the selected
+            # saved capture to be changed from the hardware Q-Link surface.
+            assignments["Q-Link 1"]=123
         qlinks.append({"Tab":tab_data["fnKeyIndex"]+1,"SubTab":tab_data["fnKeySubIndex"]+1,"Bank Direction":"Column","Q-Links":assignments})
     q={"version":4,"info":{"version":1,"type":"CompleteDescription"},"Screen Mode Q-Links":{"version":4,"map":qlinks},"Program Mode Q-Links":{f"Q-Link {n}":-1 for n in range(1,17)}}
     with open(os.path.join(ROOT,"Q-Links.json"),"w") as f: json.dump(q,f,indent=2)
-    print("Generated MPC TUI/Q-Link skins, red LED assets and pair-coded 256-point sweep graph filmstrip in",ROOT)
+    print("Generated MPC TUI/Q-Link skins, red LED assets and compact pair-coded 256-point graph filmstrip in",ROOT)
 
 if __name__=="__main__": main()
