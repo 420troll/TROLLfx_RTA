@@ -40,8 +40,8 @@ int main(int argc,char**argv) {
         e->dispatcher(e,effSetBlockSize,0,128,nullptr,0);
         e->dispatcher(e,effMainsChanged,0,1,nullptr,0);
     }
-    if(a->numParams!=607){std::printf("FAIL appended V0.5.4 parameter count: %d\n",a->numParams);return 1;}
-    if(a->dispatcher(a,effGetVendorVersion,0,0,nullptr,0.0f)!=506){std::puts("FAIL V0.5.6 build version");return 1;}
+    if(a->numParams!=2660){std::printf("FAIL V1.0 appended multi-layer parameter count: %d\n",a->numParams);return 1;}
+    if(a->dispatcher(a,effGetVendorVersion,0,0,nullptr,0.0f)!=1000){std::puts("FAIL V1.0.0 build version");return 1;}
     char parameterName[64]{};a->dispatcher(a,effGetParamName,110,0,parameterName,0.0f);
     if(std::strcmp(parameterName,"Peak Fall")!=0){std::printf("FAIL V0.3 parameter ordering changed at 110: %s\n",parameterName);return 1;}
     a->dispatcher(a,effGetParamName,111,0,parameterName,0.0f);
@@ -58,10 +58,18 @@ int main(int argc,char**argv) {
     a->dispatcher(a,effGetParamName,217,0,parameterName,0.0f);if(std::strcmp(parameterName,"Result Status")!=0){std::printf("FAIL V0.5.2 result status parameter: %s\n",parameterName);return 1;}
     a->dispatcher(a,effGetParamName,218,0,parameterName,0.0f);if(std::strcmp(parameterName,"GP20")!=0){std::printf("FAIL V0.5.3 appended graph marker parameter: %s\n",parameterName);return 1;}
     a->dispatcher(a,effGetParamName,249,0,parameterName,0.0f);if(std::strcmp(parameterName,"Sweep Diagnostic")!=0){std::printf("FAIL V0.5.3 appended diagnostic parameter: %s\n",parameterName);return 1;}
-    if(a->numParams!=607){std::printf("FAIL V0.5.4 parameter count: %d expected 607\n",a->numParams);return 1;}
+    if(a->numParams!=2660){std::printf("FAIL V1.0 parameter count: %d expected 2660\n",a->numParams);return 1;}
     a->dispatcher(a,effGetParamName,250,0,parameterName,0.0f);if(std::strcmp(parameterName,"Display Range")!=0){std::printf("FAIL V0.5.4 appended display range parameter: %s\n",parameterName);return 1;}
     a->dispatcher(a,effGetParamName,251,0,parameterName,0.0f);if(std::strcmp(parameterName,"Display Center")!=0){std::printf("FAIL V0.5.4 appended display center parameter: %s\n",parameterName);return 1;}
     a->dispatcher(a,effGetParamName,259,0,parameterName,0.0f);if(std::strcmp(parameterName,"G0")!=0){std::printf("FAIL V0.5.4 appended curve-segment parameter: %s\n",parameterName);return 1;}
+    a->dispatcher(a,effGetParamName,607,0,parameterName,0.0f);if(std::strcmp(parameterName,"Show Latest")!=0||a->getParameter(a,607)<0.99f){std::printf("FAIL V1.0 default Latest overlay layer: %s %.3f\n",parameterName,a->getParameter(a,607));return 1;}
+    a->dispatcher(a,effGetParamName,615,0,parameterName,0.0f);if(std::strcmp(parameterName,"L1G0")!=0){std::printf("FAIL V1.0 first graph segment parameter: %s\n",parameterName);return 1;}
+    a->dispatcher(a,effGetParamName,2655,0,parameterName,0.0f);if(std::strcmp(parameterName,"Overlay dB 0")!=0){std::printf("FAIL V1.0 shared graph dB tick parameter: %s\n",parameterName);return 1;}
+    a->setParameter(a,608,1.0f);a->setParameter(a,614,1.0f);
+    void* layerChunk=nullptr;const VstIntPtr layerChunkSize=a->dispatcher(a,effGetChunk,0,0,&layerChunk,0.0f);
+    a->setParameter(a,608,0.0f);a->setParameter(a,614,0.0f);
+    if(!layerChunk||layerChunkSize<12||a->dispatcher(a,effSetChunk,0,layerChunkSize,layerChunk,0.0f)!=1||a->getParameter(a,608)<0.99f||a->getParameter(a,614)<0.99f){std::puts("FAIL V1.0 independent layer mask state round-trip");return 1;}
+    a->setParameter(a,608,0.0f);a->setParameter(a,614,0.0f);
     if(argc>=3) {
         const char* mode=argv[2];
         auto display=[&](AEffect* e,int index){char out[64]{};e->dispatcher(e,effGetParamDisplay,index,0,out,0.0f);return std::string(out);};
@@ -141,6 +149,19 @@ int main(int argc,char**argv) {
             if(!waitParameter(210,latestSweepResponse,0.02f,20000)||!waitDisplay(217,"READY",5000)){
                 std::printf("FAIL saved sweep radio value 0 did not restore Latest response %.3f (got %.3f)\n",latestSweepResponse,a->getParameter(a,210));return 1;
             }
+            // Two non-primary saved measurements render as separate curves;
+            // the graph axis is common and ordered from high to low dB.
+            a->setParameter(a,608,1.0f);a->setParameter(a,614,1.0f);
+            const auto layerDeadline=std::chrono::steady_clock::now()+std::chrono::seconds(8);
+            const int layer1At5k=615+255+203,layer7At5k=615+7*255+203;
+            while((a->getParameter(a,layer1At5k)>0.99f||a->getParameter(a,layer7At5k)>0.99f)&&std::chrono::steady_clock::now()<layerDeadline)
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            if(a->getParameter(a,layer1At5k)>0.99f||a->getParameter(a,layer7At5k)>0.99f||
+               std::fabs(a->getParameter(a,layer1At5k)-a->getParameter(a,layer7At5k))<0.03f||
+               !(a->getParameter(a,2655)>a->getParameter(a,2656)&&a->getParameter(a,2658)>a->getParameter(a,2659))){
+                std::printf("FAIL multi-layer curves/common axis: P2 %.3f P8 %.3f ticks %.3f..%.3f\n",a->getParameter(a,layer1At5k),a->getParameter(a,layer7At5k),a->getParameter(a,2655),a->getParameter(a,2659));return 1;
+            }
+            a->setParameter(a,608,0.0f);a->setParameter(a,614,0.0f);
             const float fixedLed=a->getParameter(a,148), fixedCurve=a->getParameter(a,545+17);
             const float legacySmoothingModes[]={0.0f,0.2f,0.4f,0.6f,0.8f,1.0f};
             for(float mode:legacySmoothingModes){a->setParameter(a,122,mode);std::this_thread::sleep_for(std::chrono::milliseconds(30));}
@@ -160,7 +181,7 @@ int main(int argc,char**argv) {
             if(argc!=4)return 2;
             std::ifstream file(argv[3],std::ios::binary);std::vector<char> chunk((std::istreambuf_iterator<char>(file)),{});
             if(chunk.size()<12||std::memcmp(chunk.data(),"MPCP",4)!=0||a->dispatcher(a,effSetChunk,0,(VstIntPtr)chunk.size(),chunk.data(),0.0f)!=1){std::puts("FAIL loading V0.3 state chunk");return 1;}
-            if(std::fabs(a->getParameter(a,101)-27.0f/48.0f)>0.002f||std::fabs(a->getParameter(a,110)-40.0f/58.0f)>0.002f||a->getParameter(a,111)!=0||a->getParameter(a,112)!=0||a->getParameter(a,113)!=0||a->getParameter(a,115)!=0||a->getParameter(a,116)!=0||a->getParameter(a,117)!=0){std::puts("FAIL V0.3 parameter values or appended V0.4/V0.5 defaults changed");return 1;}
+            if(std::fabs(a->getParameter(a,101)-27.0f/48.0f)>0.002f||std::fabs(a->getParameter(a,110)-40.0f/58.0f)>0.002f||a->getParameter(a,111)!=0||a->getParameter(a,112)!=0||a->getParameter(a,113)!=0||a->getParameter(a,115)!=0||a->getParameter(a,116)!=0||a->getParameter(a,117)!=0||a->getParameter(a,607)<0.99f){std::puts("FAIL V0.3 parameter values or appended V1.0 defaults changed");return 1;}
             for(AEffect* e:{a,b}){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);}dlclose(lib);std::puts("PASS V0.3 saved-state chunk loads unchanged and appended controls default safely");return 0;
         }
         if(std::strcmp(mode,"--saved-v051-state-compat")==0){
@@ -208,7 +229,7 @@ int main(int argc,char**argv) {
             dlclose(lib);std::printf("PASS %s\n",mode+2);return 0;
         }
         if(std::strcmp(mode,"--service-missing")==0) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(700));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
             if(display(a,114)!="ERROR"||!readPids().empty()){std::printf("FAIL missing service state: %s\n",display(a,114).c_str());return 1;}
             for(AEffect* e:{a,b}){e->dispatcher(e,effMainsChanged,0,0,nullptr,0);e->dispatcher(e,effClose,0,0,nullptr,0);}dlclose(lib);
             std::puts("PASS missing executable gives bounded visible ERROR without blocking audio");return 0;

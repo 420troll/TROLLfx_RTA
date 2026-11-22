@@ -1,4 +1,4 @@
-"""Validate touch-button bindings and saved-session radio selectors."""
+"""Validate momentary sweep controls and V1.0 saved-layer toggle bindings."""
 import json
 import re
 from pathlib import Path
@@ -43,7 +43,7 @@ def check_button(component, param, button_id, group_size, expected_text):
 
 def main():
     manifest = json.loads((ROOT / "plugins/TrollfxRta/plugin.json").read_text())
-    assert (manifest["version"], manifest["uid"]) == ("0.5.6", "TfRA")
+    assert (manifest["version"], manifest["uid"]) == ("1.0.0", "TfRA")
     tui = json.loads((SKIN / "TUI.json").read_text())
     tabs = tui["pageData"]["tabs"]
     sweep = next(t for t in tabs if t["tabName"] == "SWEEP")["componentDefinition"]["componentsData"]
@@ -61,7 +61,7 @@ def main():
                  if e["componentData"]["name"].startswith("sweep-slot-")]
     assert len(selectors) == 8
     for slot, selector in enumerate(selectors):
-        check_button(selector, 123, slot, 8, ("Latest" if slot == 0 else f"Previous {slot + 1}"))
+        check_button(selector, 607 + slot, 1, 1, ("Latest" if slot == 0 else f"Previous {slot + 1}"))
         x, y, width, height = map(float, selector["bounds"]["bounds"].split())
         assert 0 <= x and 0 <= y and x + width <= 1280 and y + height <= 628
 
@@ -70,13 +70,14 @@ def main():
     assert re.search(r'index == kSweepStart && value\s*>=\s*0\.5f\).*?set\(kSweepStart,0\.0f\)', source)
     assert re.search(r'index == kSweepCancel && value\s*>=\s*0\.5f\).*?set\(kSweepCancel,0\.0f\)', source)
     assert 'std::sort(sessions.begin(),sessions.end()' in source
-    assert 'sessions[selected]' in source
+    assert 'sessions[static_cast<std::size_t>(selected)]' in source
     assert "0..7" in (ROOT / "docs/FORCE-V055-TOUCH-BUTTONS-HANDOFF.md").read_text()
     generator = (ROOT / "scripts/generate-force-rta-skin.py").read_text()
     for label in ("START SWEEP", "CANCEL / FADE", '"LATEST"', '"PREVIOUS 8"'):
         assert label in generator
     assert not any("smoothing" in e["componentData"]["name"].lower() for e in sweep)
-    print("PASS V0.5.6 SDK Button schema, momentary controls, 8-step saved-sweep selector and no smoothing UI")
+    assert 'kSweepLayerEnable0=kSweepActualRawDb0+31' in source
+    print("PASS V1.0 SDK Button schema, momentary controls, 8 independent saved-layer toggles and no smoothing UI")
 
 
 if __name__ == "__main__":
