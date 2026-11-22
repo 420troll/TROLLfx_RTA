@@ -8,6 +8,18 @@ from PIL import Image, ImageDraw, ImageFont
 GRAPH_STEPS = 31
 GRAPH_FRAME_COUNT = GRAPH_STEPS * GRAPH_STEPS + 1
 GRAPH_MISSING_FRAME = GRAPH_FRAME_COUNT - 1
+LAYER_COLORS = [
+    (255, 46, 55, 190),   # Latest red
+    (57, 143, 255, 190),  # Previous 2 blue
+    (63, 220, 128, 190),  # Previous 3 green
+    (255, 190, 55, 190),  # Previous 4 amber
+    (188, 112, 255, 190), # Previous 5 purple
+    (50, 222, 225, 190),  # Previous 6 cyan
+    (255, 130, 48, 190),  # Previous 7 orange
+    (245, 244, 240, 190), # Previous 8 white
+]
+LAYER_NAMES = ["LATEST", "PREVIOUS 2", "PREVIOUS 3", "PREVIOUS 4",
+               "PREVIOUS 5", "PREVIOUS 6", "PREVIOUS 7", "PREVIOUS 8"]
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "plugins", "TrollfxRta", "skins"))
 os.makedirs(ROOT, exist_ok=True)
@@ -57,8 +69,9 @@ def panel(filename, centers, title):
 def response_panel(filename, mode):
     im=Image.new("RGBA",(1280,628),(8,4,5,255)); d=ImageDraw.Draw(im)
     d.rectangle((0,0,1279,47),fill=(18,5,7,255));d.line((0,47,1279,47),fill=(115,24,31,255),width=2)
-    d.text((22,9),"TROLLfx / RTA  ·  V0.5.6  ·  BUILD 506",font=font(22,True),fill=(255,75,76,255))
-    d.text((708,14),mode,font=font(17,True),fill=(220,108,104,255))
+    d.text((22,9),"TROLLfx / RTA  ·  V1.0.0  ·  BUILD 1000",font=font(22,True),fill=(255,75,76,255))
+    header=mode+" · RELATIVE RESPONSE, NOT SPL" if mode=="SWEEP GRAPH" else mode
+    d.text((708,14),header,font=font(15,True),fill=(220,108,104,255))
     x0,x1,y0,y1=95,1257,64,548
     d.rectangle((x0,y0,x1,y1),fill=(10,5,6,255),outline=(91,22,27,255),width=2)
     if mode == "SWEEP LED RESULTS":
@@ -80,11 +93,18 @@ def response_panel(filename, mode):
         for hz,label in [(20,"20"),(31.5,"31.5"),(50,"50"),(100,"100"),(200,"200"),(500,"500"),(1000,"1k"),(2000,"2k"),(5000,"5k"),(10000,"10k"),(20000,"20k")]:
             x=xfreq(hz);d.line((x,y0,x,y1),fill=(52,25,28,255),width=1)
             d.text((x,556),label,font=font(12,True),fill=(248,173,169,255),anchor="mt")
-        d.text((97,49),"FIXED 1/6-OCTAVE CURVE  ·  AUTO-FIT FULL VALID RESPONSE",font=font(12,True),fill=(187,99,99,255))
+        # Small, fixed legend: names/colors remain visible without allocating
+        # controls or parameter-bound text overlays on the graph page.
+        spacing=(x1-x0)/8
+        for i,(name,color) in enumerate(zip(LAYER_NAMES,LAYER_COLORS)):
+            x=x0+i*spacing+2
+            d.line((x,56,x+18,56),fill=color,width=3)
+            short=name.replace("PREVIOUS ","P")
+            d.text((x+22,49),short,font=font(10,True),fill=(222,204,201,255))
     im.save(os.path.join(ROOT,filename))
 
-def graph_segment_strip():
-    """Compact pair-coded atlas for one continuous graph trace."""
+def graph_segment_strip(filename, color):
+    """Pair-coded native filmstrip used to draw a connected response trace."""
     width,height=4,64
     strip=Image.new("RGBA",(width,height*GRAPH_FRAME_COUNT),(0,0,0,0))
     draw=ImageDraw.Draw(strip)
@@ -94,9 +114,9 @@ def graph_segment_strip():
             y1=round(bottom*(height-1)/(GRAPH_STEPS-1))
             frame=top*GRAPH_STEPS+bottom
             base=frame*height
-            draw.line([(0,base+y0),(width-1,base+y1)],fill=(255,46,55,255),width=1)
+            draw.line([(0,base+y0),(width-1,base+y1)],fill=color,width=1)
     # Last frame (missing data) remains transparent.
-    strip.save(os.path.join(ROOT,"sweep-graph-segments.png"),optimize=True)
+    strip.save(os.path.join(ROOT,filename),optimize=True)
 
 def entry(name, typ, data, bounds, handle=None, focus="No"):
     remap=[] if handle is None else [{"key":"Data","value":f"Parameter {handle}"}]
@@ -124,13 +144,14 @@ def root(entries):
 def tab(name, idx, entries, sub=0):
     return {"version":1,"tabName":name,"fnKeyIndex":idx,"fnKeySubIndex":sub,"componentDefinition":root(entries),"qlinkBoundsData":[]}
 
-def draw_touch_button(stem, title, width, height):
+def draw_touch_button(stem, title, width, height, color=None):
     """Generate matching states for the SDK's native, parameter-bound Button."""
     for active in (False, True):
         im=Image.new("RGBA",(width,height),(25,10,14,255))
         d=ImageDraw.Draw(im)
-        fill=(119,23,35,255) if active else (38,18,24,255)
-        outline=(255,110,118,255) if active else (137,56,66,255)
+        accent=color or (255,110,118,255)
+        fill=tuple(int(c*.36) for c in accent[:3])+(255,) if active else (38,18,24,255)
+        outline=accent if active else tuple(int(c*.50) for c in accent[:3])+(255,)
         d.rounded_rectangle((2,2,width-3,height-3),radius=9,fill=fill,outline=outline,width=3)
         d.text((width//2,height//2),title,font=font(22,True),anchor="mm",fill=(255,246,242,255))
         im.save(os.path.join(ROOT,stem+("_on.png" if active else "_off.png")))
@@ -145,9 +166,8 @@ def main():
     ladder("led-ladder.png"); ladder("peak-ladder.png",True)
     draw_touch_button("sweep-start-touch","START SWEEP",350,84)
     draw_touch_button("sweep-cancel-touch","CANCEL / FADE",350,84)
-    for slot,label in enumerate(["LATEST","PREVIOUS 2","PREVIOUS 3","PREVIOUS 4",
-                                 "PREVIOUS 5","PREVIOUS 6","PREVIOUS 7","PREVIOUS 8"]):
-        draw_touch_button("sweep-slot-"+str(slot),label,230,76)
+    for slot,label in enumerate(LAYER_NAMES):
+        draw_touch_button("sweep-slot-"+str(slot),label,230,76,LAYER_COLORS[slot])
     centers31=["20","25","31","40","50","63","80","100","125","160","200","250","315","400","500","630","800","1k","1k2","1k6","2k","2k5","3k1","4k","5k","6k3","8k","10k","12k","16k","20k"]
     centers16=["20","31","50","80","125","200","315","500","800","1k2","2k","3k1","5k","8k","12k","20k"]
     panel("panel31.png",centers31,"31 BAND / 1-3 OCT")
@@ -187,7 +207,6 @@ def main():
         sweep_entries.append(entry("sweepParam"+str(slot),"Slider",{"version":1,"handleName":"Data"},f"{x} {y+38} 520 78",idx,"Yes"))
     tabs.append(tab("SWEEP",4,sweep_entries))
     response_panel("sweep-led-panel.png","SWEEP LED RESULTS")
-    graph_segment_strip()
     led_result_entries=[entry("sweepLedBackground","Image",{"version":2,"imageType":"Regular","colour":"0","image":"sweep-led-panel.png"},"0 0 1280 628")]
     led_x0,led_x1,led_y0,led_y1=95,1257,64,548
     gap=(led_x1-led_x0)/31;width=22;start=led_x0+(gap-width)/2
@@ -205,34 +224,36 @@ def main():
     graph_entries=[entry("sweepGraphBackground","Image",{"version":2,"imageType":"Regular","colour":"0","image":"sweep-graph-panel.png"},"0 0 1280 628")]
     graph_x0,graph_x1,graph_y0,graph_y1=95,1257,64,548
     segment_gap=(graph_x1-graph_x0)/255.0
-    # A connected 256-sample polyline. Each documented Image film-strip
-    # component selects a pre-rendered segment frame encoding adjacent y bins.
-    # 31-by-31 endpoint lookup: 962 frames, 61,568 px high instead of the
-    # V0.5.5 atlas's 16,642 frames and 1,065,088 px height. It draws a line only.
-    for i in range(255):
-        bounds=f"{graph_x0+i*segment_gap:.4f} {graph_y0} {segment_gap+0.04:.4f} {graph_y1-graph_y0}"
-        data={"version":2,"imageType":"FilmStrip","colour":"0","image":"sweep-graph-segments.png","numFrames":GRAPH_FRAME_COUNT,"handleName":"Data"}
-        graph_entries.append(entry(f"graphLineSegment{i}","Image",data,bounds,259+i,"No"))
+    # Eight color-tinted assets share the same bounded 962-frame geometry.
+    # Each visible layer gets its own frame parameters; generation/update occurs
+    # on the sweep worker, never in process().
+    for layer,color in enumerate(LAYER_COLORS):
+        graph_segment_strip("sweep-graph-segments-"+str(layer)+".png",color)
+        for i in range(255):
+            bounds=f"{graph_x0+i*segment_gap:.4f} {graph_y0} {segment_gap+0.04:.4f} {graph_y1-graph_y0}"
+            parameter=615+layer*255+i
+            data={"version":2,"imageType":"FilmStrip","colour":"0","image":"sweep-graph-segments-"+str(layer)+".png","numFrames":GRAPH_FRAME_COUNT,"handleName":"Data"}
+            graph_entries.append(entry(f"graphLayer{layer}Segment{i}","Image",data,bounds,parameter,"No"))
     for i in range(5):
         y=graph_y0+i*(graph_y1-graph_y0)/4
-        graph_entries.append(label_entry("graphDbTick"+str(i),254+i,14,y-9,52,18,size=12,color="ffff9996",align="right verticallyCentred"))
+        graph_entries.append(label_entry("graphDbTick"+str(i),2655+i,14,y-9,52,18,size=12,color="ffff9996",align="right verticallyCentred"))
     graph_entries.append(label_entry("graphResultStatus",217,1012,10,240,22,size=14,color="ffff9b55"))
     graph_entries.append(label_entry("graphSweepDiagnostic",249,1012,31,240,16,size=10,color="ffff7777"))
     tabs.append(tab("SWEEP GRAPH",5,graph_entries,1))
-    # Saved-measurement selection is an eight-position choice (parameter 123).
-    # SDK Button radio group uses zero-based IDs and does not alter session data.
+    # Each saved slot is a persistent independent layer toggle. Enabling one
+    # also makes it the primary measurement for the LED results view.
     slot_entries=[entry("slotsBackground","Image",
                         {"version":2,"imageType":"Regular","colour":"0","image":"sweep-led-panel.png"},
                         "0 0 1280 628")]
     slot_entries.append(entry("slotsTitle","Label",
                               {"version":1,"textStyle":text_style(26,"ffffaaaa",bold=True),
                                "type":"Text","handleName":"Invalid",
-                               "text":"SELECT SAVED SWEEP · NO RECORDING OR OVERWRITE"},
+                               "text":"TOGGLE GRAPH LAYERS · SELECT PRIMARY LED SWEEP ON ITS RESULTS PAGE"},
                               "80 72 1120 52"))
     for slot in range(8):
         x=96+(slot%4)*270
         y=176+(slot//4)*155
-        slot_entries.append(touch_button("sweep-slot-"+str(slot),123,x,y,230,76,slot,8))
+        slot_entries.append(touch_button("sweep-slot-"+str(slot),607+slot,x,y,230,76,1,1))
     slot_entries.append(label_entry("slotsStatus",217,825,532,270,38,size=20,color="ffff9b55"))
     tabs.append(tab("SAVED SWEEPS",5,slot_entries,2))
     level_entries=[]
@@ -255,7 +276,7 @@ def main():
             for n,idx in enumerate((118,119,120,121),1): assignments[f"Q-Link {n}"]=idx
             assignments["Q-Link 5"]=123
         if tab_data["tabName"] == "SAVED SWEEPS":
-            assignments["Q-Link 6"]=123
+            for n in range(8):assignments[f"Q-Link {n+1}"]=607+n
         if tab_data["tabName"] in ("SWEEP LED RESULTS", "SWEEP GRAPH"):
             # Keep the result pages uncluttered while allowing the selected
             # saved capture to be changed from the hardware Q-Link surface.
@@ -263,6 +284,6 @@ def main():
         qlinks.append({"Tab":tab_data["fnKeyIndex"]+1,"SubTab":tab_data["fnKeySubIndex"]+1,"Bank Direction":"Column","Q-Links":assignments})
     q={"version":4,"info":{"version":1,"type":"CompleteDescription"},"Screen Mode Q-Links":{"version":4,"map":qlinks},"Program Mode Q-Links":{f"Q-Link {n}":-1 for n in range(1,17)}}
     with open(os.path.join(ROOT,"Q-Links.json"),"w") as f: json.dump(q,f,indent=2)
-    print("Generated MPC TUI/Q-Link skins, red LED assets and compact pair-coded 256-point graph filmstrip in",ROOT)
+    print("Generated MPC TUI/Q-Link skins, LED assets and eight compact colored 256-point graph filmstrips in",ROOT)
 
 if __name__=="__main__": main()

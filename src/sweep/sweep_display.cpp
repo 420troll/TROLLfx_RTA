@@ -125,4 +125,71 @@ bool makeSweepDisplayResponse(const ResponseCurve& raw,
     return true;
 }
 
+bool makeSweepOverlayDisplay(
+    const std::array<const ResponseCurve*, kSweepDisplayLayers>& measurements,
+    std::uint8_t enabledMask,
+    SweepOverlayDisplay& display, std::string* error) {
+    SweepOverlayDisplay next;
+    for (auto& layer : next.graphSegmentFrame)
+        layer.fill(kSweepGraphMissingFrame);
+
+    std::array<std::vector<double>, kSweepDisplayLayers> smoothed;
+    std::array<double, kSweepDisplayLayers> references{};
+    double minimum = std::numeric_limits<double>::infinity();
+    double maximum = -std::numeric_limits<double>::infinity();
+    for (std::size_t layer = 0; layer < kSweepDisplayLayers; ++layer) {
+        if ((enabledMask & (1u << layer)) == 0 || !measurements[layer]) continue;
+        const auto& raw = *measurements[layer];
+        if (raw.frequencyHz.size() < 2 || raw.frequencyHz.size() != raw.magnitude.size() ||
+            raw.frequencyHz.front() > 1000.0 || raw.frequencyHz.back() < 1000.0)
+            continue; // missing/invalid/empty layers are simply not drawn
+        std::string localError;
+        if (!fractionalOctaveSmooth(raw.frequencyHz, raw.magnitude,
+                                    kSweepDisplaySmoothingN, smoothed[layer], &localError))
+            continue;
+        references[layer] = responseDbAt(raw.frequencyHz, smoothed[layer], 1000.0);
+        if (!std::isfinite(references[layer])) continue;
+        bool hasFinite = false;
+        for (std::size_t i = 0; i < raw.frequencyHz.size(); ++i) {
+            const double hz = raw.frequencyHz[i];
+            if (hz < 20.0 || hz > 20000.0) continue;
+            const double db = responseDbAt(raw.frequencyHz, smoothed[layer], hz) - references[layer];
+            if (!std::isfinite(db)) continue;
+            minimum = std::min(minimum, db);
+            maximum = std::max(maximum, db);
+            hasFinite = true;
+        }
+        if (hasFinite) next.validLayerMask |= static_cast<std::uint8_t>(1u << layer);
+    }
+    if (next.validLayerMask == 0) {
+        display = next;
+        if (error) error->clear();
+        return true;
+    }
+
+    const double headroom = std::max(1.0, (maximum - minimum) * 0.05);
+    next.displayMinimumDb = minimum - headroom;
+    next.displayMaximumDb = maximum + headroom;
+    next.displayRangeDb = next.displayMaximumDb - next.displayMinimumDb;
+    for (std::size_t layer = 0; layer < kSweepDisplayLayers; ++layer) {
+        if ((next.validLayerMask & (1u << layer)) == 0) continue;
+        const auto& raw = *measurements[layer];
+        std::array<double, kSweepGraphSamples> points{};
+        for (std::size_t i = 0; i < kSweepGraphSamples; ++i) {
+            const double hz = graphFrequency(i);
+            points[i] = (hz < raw.frequencyHz.front() || hz > raw.frequencyHz.back())
+                ? NAN : relativeDb(raw.frequencyHz, smoothed[layer], hz, references[layer]);
+        }
+        for (std::size_t i = 0; i < kSweepGraphSegments; ++i) {
+            if (!std::isfinite(points[i]) || !std::isfinite(points[i + 1])) continue;
+            const unsigned ya = graphY(points[i], next.displayMinimumDb, next.displayRangeDb);
+            const unsigned yb = graphY(points[i + 1], next.displayMinimumDb, next.displayRangeDb);
+            next.graphSegmentFrame[layer][i] = ya * kSweepGraphVerticalSteps + yb;
+        }
+    }
+    display = next;
+    if (error) error->clear();
+    return true;
+}
+
 } // namespace trollfx::sweep

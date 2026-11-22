@@ -65,6 +65,37 @@ int main() {
     assert(d.graphSegmentFrame.back()<kSweepGraphMissingFrame);
     assert(std::any_of(d.graphSegmentFrame.begin(),d.graphSegmentFrame.end(),
                        [&](unsigned f){return f!=d.graphSegmentFrame.front();}));
+
+    // Multiple saved sweeps share one 1 kHz-relative display range. Each
+    // curve stays independent in color/parameter space, but never receives a
+    // per-curve normalization.
+    ResponseCurve flat2=flat;
+    for(std::size_t i=0;i<flat2.magnitude.size();i++)
+        if(flat2.frequencyHz[i]>2500.0)flat2.magnitude[i]*=std::pow(10.0,-6.0/20.0);
+    ResponseCurve peaked=flat;
+    for(std::size_t i=0;i<peaked.magnitude.size();i++){
+        const double oct=std::log2(peaked.frequencyHz[i]/5000.0);
+        peaked.magnitude[i]*=std::pow(10.0,(oct>-0.5&&oct<0.5?8.0:0.0)/20.0);
+    }
+    std::array<const ResponseCurve*,kSweepDisplayLayers> curves{};
+    curves[0]=&flat;curves[1]=&flat2;curves[2]=&peaked;
+    SweepOverlayDisplay overlays;
+    assert(makeSweepOverlayDisplay(curves,0x07,overlays,&error));
+    assert(overlays.validLayerMask==0x07);
+    assert(overlays.displayMaximumDb>8.0&&overlays.displayMinimumDb<-6.0);
+    assert(overlays.graphSegmentFrame[0]!=overlays.graphSegmentFrame[1]);
+    assert(overlays.graphSegmentFrame[0]!=overlays.graphSegmentFrame[2]);
+    assert(overlays.graphSegmentFrame[3][0]==kSweepGraphMissingFrame);
+    assert(overlays.graphSegmentFrame[7][kSweepGraphSegments-1]==kSweepGraphMissingFrame);
+    SweepOverlayDisplay oneCurve;
+    curves[1]=nullptr;curves[2]=nullptr;
+    assert(makeSweepOverlayDisplay(curves,0x07,oneCurve,&error));
+    assert(oneCurve.validLayerMask==0x01);
+    assert(oneCurve.displayMinimumDb>overlays.displayMinimumDb);
+    assert(oneCurve.displayMaximumDb<overlays.displayMaximumDb);
+    curves[0]=nullptr;
+    assert(makeSweepOverlayDisplay(curves,0xff,oneCurve,&error));
+    assert(oneCurve.validLayerMask==0);
     assert(wide.phaseRadians.front()==0.2);
 
     // A narrow resonance is reduced by fixed 1/6-octave smoothing; the full
@@ -90,5 +121,5 @@ int main() {
     assert(d.graphSegmentFrame.back()<kSweepGraphMissingFrame);
     assert(flat.magnitude==rawBefore&&flat.phaseRadians==phaseBefore);
 
-    std::cout<<"PASS V0.5.6 fixed 1/6 smoothing, full-range auto-fit, shared LED/graph scaling and 256-point continuous trace mapping\n";
+    std::cout<<"PASS V1.0 1/6 smoothing, full-range auto-fit, shared multi-layer dB axis and 256-point connected traces\n";
 }
